@@ -62,8 +62,7 @@ export default function ProfilePage() {
               </Avatar>
               <div className="text-center sm:text-left flex-1">
                 <h1 className="text-2xl font-bold">{user.username}</h1>
-                <p className="text-muted-foreground">{user.email}</p>
-                {user.bio && <p className="mt-2">{user.bio}</p>}
+                {user.bio && <p className="mt-2 text-muted-foreground">{user.bio}</p>}
               </div>
               <div className="text-center">
                 <div className="text-4xl font-bold text-primary">

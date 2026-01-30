@@ -3,40 +3,36 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { GameType } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Clock, Move, RotateCcw, Shuffle, Trophy } from 'lucide-react';
+import { Clock, Grid3X3, Move, RotateCcw, Shuffle, Trophy } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-interface Tile {
-  value: number;
-  row: number;
-  col: number;
+type GridSize = 4 | 5 | 6;
+
+function createSolvedPuzzle(size: GridSize): number[] {
+  return Array.from({ length: size * size - 1 }, (_, i) => i + 1).concat([0]);
 }
 
-const GRID_SIZE = 4;
-
-function createSolvedPuzzle(): number[] {
-  return Array.from({ length: GRID_SIZE * GRID_SIZE - 1 }, (_, i) => i + 1).concat([0]);
-}
-
-function shufflePuzzle(tiles: number[]): number[] {
+function shufflePuzzle(tiles: number[], size: GridSize): number[] {
   const shuffled = [...tiles];
   let blankIndex = shuffled.indexOf(0);
 
-  // Perform random valid moves
-  for (let i = 0; i < 200; i++) {
+  // Perform random valid moves (more for larger grids)
+  const shuffleCount = size === 4 ? 150 : size === 5 ? 200 : 250;
+  for (let i = 0; i < shuffleCount; i++) {
     const possibleMoves = [];
-    const row = Math.floor(blankIndex / GRID_SIZE);
-    const col = blankIndex % GRID_SIZE;
+    const row = Math.floor(blankIndex / size);
+    const col = blankIndex % size;
 
-    if (row > 0) possibleMoves.push(blankIndex - GRID_SIZE);
-    if (row < GRID_SIZE - 1) possibleMoves.push(blankIndex + GRID_SIZE);
+    if (row > 0) possibleMoves.push(blankIndex - size);
+    if (row < size - 1) possibleMoves.push(blankIndex + size);
     if (col > 0) possibleMoves.push(blankIndex - 1);
-    if (col < GRID_SIZE - 1) possibleMoves.push(blankIndex + 1);
+    if (col < size - 1) possibleMoves.push(blankIndex + 1);
 
     const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
     [shuffled[blankIndex], shuffled[randomMove]] = [shuffled[randomMove], shuffled[blankIndex]];
@@ -53,8 +49,14 @@ function isSolved(tiles: number[]): boolean {
   return tiles[tiles.length - 1] === 0;
 }
 
+function isInCorrectPosition(tile: number, index: number): boolean {
+  if (tile === 0) return false;
+  return tile === index + 1;
+}
+
 export default function SlidingPuzzlePage() {
   const { user } = useAuth();
+  const [gridSize, setGridSize] = useState<GridSize>(4);
   const [tiles, setTiles] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [time, setTime] = useState(0);
@@ -63,13 +65,13 @@ export default function SlidingPuzzlePage() {
   const [bestScore, setBestScore] = useState<number | null>(null);
 
   useEffect(() => {
-    setTiles(createSolvedPuzzle());
+    setTiles(createSolvedPuzzle(gridSize));
     if (user) {
       api.getBestScore(GameType.SLIDING_PUZZLE)
         .then(({ bestScore }) => setBestScore(bestScore))
         .catch(console.error);
     }
-  }, [user]);
+  }, [user, gridSize]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -79,22 +81,32 @@ export default function SlidingPuzzlePage() {
     return () => clearInterval(interval);
   }, [isPlaying, solved]);
 
+  const handleGridSizeChange = (size: string) => {
+    if (isPlaying) return;
+    const newSize = parseInt(size) as GridSize;
+    setGridSize(newSize);
+    setTiles(createSolvedPuzzle(newSize));
+    setMoves(0);
+    setTime(0);
+    setSolved(false);
+  };
+
   const startGame = useCallback(() => {
-    setTiles(shufflePuzzle(createSolvedPuzzle()));
+    setTiles(shufflePuzzle(createSolvedPuzzle(gridSize), gridSize));
     setMoves(0);
     setTime(0);
     setIsPlaying(true);
     setSolved(false);
-  }, []);
+  }, [gridSize]);
 
   const handleTileClick = useCallback((index: number) => {
     if (!isPlaying || solved) return;
 
     const blankIndex = tiles.indexOf(0);
-    const row = Math.floor(index / GRID_SIZE);
-    const col = index % GRID_SIZE;
-    const blankRow = Math.floor(blankIndex / GRID_SIZE);
-    const blankCol = blankIndex % GRID_SIZE;
+    const row = Math.floor(index / gridSize);
+    const col = index % gridSize;
+    const blankRow = Math.floor(blankIndex / gridSize);
+    const blankCol = blankIndex % gridSize;
 
     const isAdjacent =
       (Math.abs(row - blankRow) === 1 && col === blankCol) ||
@@ -110,12 +122,16 @@ export default function SlidingPuzzlePage() {
         setSolved(true);
         setIsPlaying(false);
 
-        const score = Math.max(1000 - moves * 10 - time * 2, 100);
+        // Score multiplier based on grid size
+        const multiplier = gridSize === 4 ? 1 : gridSize === 5 ? 1.5 : 2;
+        const baseScore = Math.max(1000 - moves * 10 - time * 2, 100);
+        const score = Math.round(baseScore * multiplier);
 
         if (user) {
           api.submitScore({
             gameType: GameType.SLIDING_PUZZLE,
             score,
+            level: gridSize,
             timeSpent: time,
           }).then(() => {
             toast.success(`Puzzle solved! Score: ${score}`);
@@ -128,12 +144,24 @@ export default function SlidingPuzzlePage() {
         }
       }
     }
-  }, [tiles, isPlaying, solved, moves, time, user, bestScore]);
+  }, [tiles, isPlaying, solved, moves, time, user, bestScore, gridSize]);
+
+  const resetGame = () => {
+    setTiles(createSolvedPuzzle(gridSize));
+    setMoves(0);
+    setTime(0);
+    setIsPlaying(false);
+    setSolved(false);
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getDifficultyLabel = () => {
+    return gridSize === 4 ? 'Easy' : gridSize === 5 ? 'Medium' : 'Hard';
   };
 
   return (
@@ -142,11 +170,29 @@ export default function SlidingPuzzlePage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl">Sliding Puzzle</CardTitle>
-              <Badge variant="outline">4x4</Badge>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                <Grid3X3 className="h-6 w-6 text-primary" />
+                Sliding Puzzle
+              </CardTitle>
+              <Badge variant={gridSize === 4 ? 'default' : gridSize === 5 ? 'secondary' : 'destructive'}>
+                {getDifficultyLabel()}
+              </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Difficulty Selection */}
+            <Tabs
+              value={gridSize.toString()}
+              onValueChange={handleGridSizeChange}
+              className="w-full"
+            >
+              <TabsList className="grid grid-cols-3 w-full">
+                <TabsTrigger value="4" disabled={isPlaying}>4×4 Easy</TabsTrigger>
+                <TabsTrigger value="5" disabled={isPlaying}>5×5 Medium</TabsTrigger>
+                <TabsTrigger value="6" disabled={isPlaying}>6×6 Hard</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center p-3 bg-muted rounded-lg">
@@ -168,23 +214,32 @@ export default function SlidingPuzzlePage() {
 
             {/* Puzzle Grid */}
             <div className="relative aspect-square bg-muted rounded-xl p-2">
-              <div className="grid grid-cols-4 gap-1 h-full">
-                {tiles.map((tile, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleTileClick(index)}
-                    disabled={!isPlaying || tile === 0}
-                    className={cn(
-                      'aspect-square rounded-lg font-bold text-2xl transition-all duration-150',
-                      tile === 0
-                        ? 'bg-transparent'
-                        : 'bg-primary text-primary-foreground hover:scale-105 active:scale-95',
-                      solved && tile !== 0 && 'bg-green-500'
-                    )}
-                  >
-                    {tile !== 0 && tile}
-                  </button>
-                ))}
+              <div
+                className="grid gap-1 h-full"
+                style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}
+              >
+                {tiles.map((tile, index) => {
+                  const isCorrect = isInCorrectPosition(tile, index);
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleTileClick(index)}
+                      disabled={!isPlaying || tile === 0}
+                      className={cn(
+                        'aspect-square rounded-lg font-bold transition-all duration-150 flex items-center justify-center',
+                        gridSize === 4 ? 'text-2xl' : gridSize === 5 ? 'text-xl' : 'text-lg',
+                        tile === 0
+                          ? 'bg-transparent'
+                          : isCorrect && isPlaying
+                            ? 'bg-green-500 text-white hover:scale-105 active:scale-95'
+                            : 'bg-primary text-primary-foreground hover:scale-105 active:scale-95',
+                        solved && tile !== 0 && 'bg-green-500 text-white'
+                      )}
+                    >
+                      {tile !== 0 && tile}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -205,16 +260,7 @@ export default function SlidingPuzzlePage() {
                 <Shuffle className="h-4 w-4 mr-2" />
                 {isPlaying ? 'Restart' : 'Start'}
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setTiles(createSolvedPuzzle());
-                  setMoves(0);
-                  setTime(0);
-                  setIsPlaying(false);
-                  setSolved(false);
-                }}
-              >
+              <Button variant="outline" onClick={resetGame}>
                 <RotateCcw className="h-4 w-4" />
               </Button>
             </div>

@@ -10,6 +10,7 @@ import {
     Puzzle,
     Route,
     Scale,
+    Sparkles,
     Type,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -23,6 +24,16 @@ const games = [
     difficulty: 'Medium',
     category: 'Logic',
     color: 'text-blue-500',
+  },
+  {
+    id: 'word-connect',
+    name: 'Word Connect',
+    description: 'Swipe letters in a circle to form hidden words',
+    icon: Sparkles,
+    difficulty: 'Medium',
+    category: 'Word',
+    color: 'text-violet-500',
+    isNew: true,
   },
   {
     id: 'daily-mystery-word',
@@ -52,15 +63,6 @@ const games = [
     color: 'text-purple-500',
   },
   {
-    id: 'letter-maze',
-    name: 'Letter Maze',
-    description: 'Find words hidden in a maze of letters',
-    icon: Puzzle,
-    difficulty: 'Hard',
-    category: 'Word',
-    color: 'text-rose-500',
-  },
-  {
     id: 'pattern-spotter',
     name: 'Pattern Spotter',
     description: 'Identify the next element in visual and numerical patterns',
@@ -79,6 +81,16 @@ const games = [
     color: 'text-pink-500',
   },
   {
+    id: 'letter-maze',
+    name: 'Letter Maze',
+    description: 'Find words hidden in a maze of letters',
+    icon: Puzzle,
+    difficulty: 'Hard',
+    category: 'Word',
+    color: 'text-rose-500',
+    isUpcoming: true,
+  },
+  {
     id: 'balance-puzzle',
     name: 'Balance Puzzle',
     description: 'Determine the weight needed to balance the scale',
@@ -86,6 +98,7 @@ const games = [
     difficulty: 'Hard',
     category: 'Logic',
     color: 'text-orange-500',
+    isUpcoming: true,
   },
 ];
 
@@ -103,16 +116,23 @@ export default function GamesPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Solo Games</h1>
           <p className="text-muted-foreground">
-            Train your brain with 8 unique puzzle games. Track your progress and compete for high scores.
+            Train your brain with 9 unique puzzle games. Track your progress and compete for high scores.
           </p>
         </div>
 
         {/* Games Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {games.map((game) => {
+            {games.map((game) => {
             const Icon = game.icon;
+            const isUpcoming = 'isUpcoming' in game && game.isUpcoming;
             return (
-              <Card key={game.id} className="group hover:border-primary transition-all duration-200">
+              <Card key={game.id} className={`group hover:border-primary transition-all duration-200 relative ${isUpcoming ? 'opacity-70' : ''}`}>
+                {game.isNew && (
+                  <Badge className="absolute -top-2 -right-2 z-10 bg-violet-500">NEW</Badge>
+                )}
+                {isUpcoming && (
+                  <Badge className="absolute -top-2 -right-2 z-10 bg-gray-500">Upcoming</Badge>
+                )}
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className={`h-12 w-12 rounded-lg bg-muted flex items-center justify-center ${game.color}`}>
@@ -134,12 +154,18 @@ export default function GamesPage() {
                     <Badge variant="secondary" className="text-xs">
                       {game.category}
                     </Badge>
-                    <Button size="sm" asChild>
-                      <Link href={`/games/${game.id}`}>
-                        <Play className="h-4 w-4 mr-1" />
-                        Play
-                      </Link>
-                    </Button>
+                    {isUpcoming ? (
+                      <Button size="sm" variant="outline" disabled>
+                        Coming Soon
+                      </Button>
+                    ) : (
+                      <Button size="sm" asChild>
+                        <Link href={`/games/${game.id}`}>
+                          <Play className="h-4 w-4 mr-1" />
+                          Play
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

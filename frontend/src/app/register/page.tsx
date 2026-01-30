@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,10 +31,15 @@ export default function RegisterPage() {
       return;
     }
 
+    if (username.length < 3) {
+      toast.error('Username must be at least 3 characters');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await register(username, email, password);
+      await register(username, password);
       toast.success('Account created successfully!');
       router.push('/');
     } catch (error: unknown) {
@@ -69,19 +73,6 @@ export default function RegisterPage() {
                 placeholder="Choose a username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>

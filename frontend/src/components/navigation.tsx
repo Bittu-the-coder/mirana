@@ -13,7 +13,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/lib/auth-context';
 import { cn } from '@/lib/utils';
 import {
-    Brain,
     Gamepad2,
     Home,
     LogOut,
@@ -22,8 +21,9 @@ import {
     Swords,
     Trophy,
     User,
-    Users,
+    Users
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -34,6 +34,13 @@ const navItems = [
   { href: '/multiplayer', label: 'Multiplayer', icon: Swords },
   { href: '/puzzles', label: 'Puzzles', icon: Puzzle },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { href: '/community', label: 'Community', icon: Users },
+];
+
+const mobileNavItems = [
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/games', label: 'Games', icon: Gamepad2 },
+  { href: '/multiplayer', label: 'Battle', icon: Swords },
   { href: '/community', label: 'Community', icon: Users },
 ];
 
@@ -72,7 +79,7 @@ export function Navigation() {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col border-r bg-card p-4">
         <Link href="/" className="flex items-center gap-3 px-4 py-4 mb-6">
-          <Brain className="h-8 w-8 text-primary" />
+          <Image src="/logo.png" alt="Mirana" width={40} height={40} className="rounded-lg" />
           <span className="text-xl font-bold">Mirana</span>
         </Link>
 
@@ -125,36 +132,35 @@ export function Navigation() {
         </div>
       </aside>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-card z-50">
-        <div className="flex items-center justify-around py-2">
-          {navItems.slice(0, 4).map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex flex-col items-center gap-1 p-2 rounded-lg transition-colors',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
-                )}
-              >
-                <Icon className="h-5 w-5" />
-                <span className="text-xs">{item.label}</span>
-              </Link>
-            );
-          })}
+      {/* Mobile Top Header with Profile */}
+      <header className="md:hidden fixed top-0 left-0 right-0 h-14 border-b bg-card z-50 flex items-center justify-between px-4">
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/logo.png" alt="Mirana" width={32} height={32} className="rounded-lg" />
+          <span className="font-bold">Mirana</span>
+        </Link>
+        <div className="flex items-center gap-2">
+          {user ? (
+            <Link href="/profile">
+              <Avatar className="h-9 w-9 border-2 border-primary">
+                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                  {user.username.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+          ) : (
+            <Button size="sm" asChild>
+              <Link href="/login">Login</Link>
+            </Button>
+          )}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="flex flex-col gap-1 h-auto p-2">
+              <Button variant="ghost" size="icon">
                 <Menu className="h-5 w-5" />
-                <span className="text-xs">More</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
               <div className="flex items-center gap-3 mb-6">
-                <Brain className="h-8 w-8 text-primary" />
+                <Image src="/logo.png" alt="Mirana" width={32} height={32} className="rounded-lg" />
                 <span className="text-xl font-bold">Mirana</span>
               </div>
               <nav className="space-y-1">
@@ -197,7 +203,33 @@ export function Navigation() {
             </SheetContent>
           </Sheet>
         </div>
+      </header>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-card z-50">
+        <div className="flex items-center justify-around py-2">
+          {mobileNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex flex-col items-center gap-1 p-2 rounded-lg transition-colors',
+                  isActive ? 'text-primary' : 'text-muted-foreground'
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-xs">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
+
+      {/* Spacer for mobile header */}
+      <div className="md:hidden h-14" />
     </>
   );
 }

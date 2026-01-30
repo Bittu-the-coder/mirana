@@ -8,17 +8,13 @@ import { User, UserDocument } from './schemas/user.schema';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(createUserDto: { username: string; email: string; password: string }): Promise<UserDocument> {
+  async create(createUserDto: { username: string; password: string }): Promise<UserDocument> {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const user = new this.userModel({
-      ...createUserDto,
+      username: createUserDto.username,
       password: hashedPassword,
     });
     return user.save();
-  }
-
-  async findByEmail(email: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({ email }).exec();
   }
 
   async findByUsername(username: string): Promise<UserDocument | null> {

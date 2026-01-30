@@ -2,22 +2,32 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-    ArrowRight,
-    Gamepad2,
-    Puzzle,
-    Sparkles,
-    Swords,
-    Target,
-    Trophy,
-    Users,
-    Zap
+  ArrowRight,
+  Brain,
+  Calculator,
+  Eye,
+  Gamepad2,
+  Grid3X3,
+  Hash,
+  Palette,
+  Play,
+  Puzzle,
+  Route,
+  Scale,
+  Sparkles,
+  Swords,
+  Target,
+  Trophy,
+  Type,
+  Users,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
 
 const features = [
   {
     icon: Gamepad2,
-    title: '8 Solo Games',
+    title: '8+ Solo Games',
     description: 'Challenge yourself with puzzles, memory games, and logic challenges',
   },
   {
@@ -38,14 +48,14 @@ const features = [
 ];
 
 const soloGames = [
-  { name: 'Sliding Puzzle', difficulty: 'Medium', icon: '🧩' },
-  { name: 'Daily Mystery Word', difficulty: 'Hard', icon: '📝' },
-  { name: 'Number Pyramid', difficulty: 'Easy', icon: '🔺' },
-  { name: 'Memory Path', difficulty: 'Medium', icon: '🧠' },
-  { name: 'Letter Maze', difficulty: 'Hard', icon: '🔤' },
-  { name: 'Pattern Spotter', difficulty: 'Easy', icon: '👁️' },
-  { name: 'Color Memory', difficulty: 'Medium', icon: '🎨' },
-  { name: 'Balance Puzzle', difficulty: 'Hard', icon: '⚖️' },
+  { name: 'Sliding Puzzle', difficulty: 'Medium', icon: Grid3X3, href: '/games/sliding-puzzle', color: 'text-blue-500' },
+  { name: 'Daily Mystery Word', difficulty: 'Hard', icon: Type, href: '/games/daily-mystery-word', color: 'text-green-500' },
+  { name: 'Number Pyramid', difficulty: 'Easy', icon: Hash, href: '/games/number-pyramid', color: 'text-amber-500' },
+  { name: 'Memory Path', difficulty: 'Medium', icon: Route, href: '/games/memory-path', color: 'text-purple-500' },
+  { name: 'Letter Maze', difficulty: 'Hard', icon: Type, href: '/games/letter-maze', color: 'text-pink-500' },
+  { name: 'Pattern Spotter', difficulty: 'Easy', icon: Eye, href: '/games/pattern-spotter', color: 'text-cyan-500' },
+  { name: 'Color Memory', difficulty: 'Medium', icon: Palette, href: '/games/color-memory', color: 'text-red-500' },
+  { name: 'Balance Puzzle', difficulty: 'Hard', icon: Scale, href: '/games/balance-puzzle', color: 'text-orange-500' },
 ];
 
 const multiplayerGames = [
@@ -53,6 +63,13 @@ const multiplayerGames = [
   { name: 'Riddle Arena', description: 'Competitive puzzle solving' },
   { name: 'Memory Match Battle', description: 'Find pairs before your opponent' },
   { name: 'Word Chain', description: 'Build words in turns' },
+];
+
+const brainChallenges = [
+  { name: 'Multiplication Sprint', description: 'Solve multiplication problems fast', icon: Calculator, color: 'bg-green-500', href: '/games/multiplication-sprint', status: 'active' },
+  { name: 'Mental Math', description: 'Quick arithmetic challenges', icon: Brain, color: 'bg-blue-500', href: '#', status: 'upcoming' },
+  { name: 'Number Sequences', description: 'Find the pattern and continue', icon: Hash, color: 'bg-amber-500', href: '/games/pattern-spotter', status: 'active' },
+  { name: 'Quick Memory', description: 'Remember and recall numbers', icon: Zap, color: 'bg-purple-500', href: '/games/color-memory', status: 'active' },
 ];
 
 export default function Home() {
@@ -115,8 +132,51 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Solo Games */}
+      {/* Train Your Brain Section */}
       <section className="px-4 py-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+                <Brain className="h-7 w-7 text-primary" />
+                Train Your Brain
+              </h2>
+              <p className="text-muted-foreground mt-1">Quick mental exercises and challenges</p>
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {brainChallenges.map((challenge) => {
+              const Icon = challenge.icon;
+              const isUpcoming = challenge.status === 'upcoming';
+              return (
+                <Link key={challenge.name} href={challenge.href}>
+                  <Card className={`hover:border-primary transition-colors cursor-pointer group overflow-hidden relative ${isUpcoming ? 'opacity-70' : ''}`}>
+                    {isUpcoming && (
+                      <Badge className="absolute top-2 right-2 z-10 bg-gray-500">Upcoming</Badge>
+                    )}
+                    <CardContent className="p-0">
+                      <div className={`${challenge.color} p-4 flex items-center justify-center`}>
+                        <Icon className="h-8 w-8 text-white" />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold group-hover:text-primary transition-colors">{challenge.name}</h3>
+                        <p className="text-sm text-muted-foreground">{challenge.description}</p>
+                        <Button size="sm" className="mt-3 w-full" variant="outline" disabled={isUpcoming}>
+                          <Play className="h-4 w-4 mr-2" />
+                          {isUpcoming ? 'Coming Soon' : 'Start'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Solo Games */}
+      <section className="px-4 py-16 bg-muted/50">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -130,29 +190,40 @@ export default function Home() {
             </Button>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {soloGames.map((game) => (
-              <Card key={game.name} className="hover:border-primary transition-colors cursor-pointer group">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{game.icon}</span>
-                    <div className="flex-1">
-                      <p className="font-medium group-hover:text-primary transition-colors">
-                        {game.name}
-                      </p>
-                      <Badge variant="outline" className="text-xs mt-1">
-                        {game.difficulty}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {soloGames.map((game) => {
+              const Icon = game.icon;
+              return (
+                <Link key={game.name} href={game.href}>
+                  <Card className="hover:border-primary transition-colors cursor-pointer group h-full">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`h-10 w-10 rounded-lg bg-muted flex items-center justify-center ${game.color}`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium group-hover:text-primary transition-colors">
+                            {game.name}
+                          </p>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {game.difficulty}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button size="sm" className="w-full" variant="secondary">
+                        <Play className="h-4 w-4 mr-2" />
+                        Play Now
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* Multiplayer */}
-      <section className="px-4 py-16 bg-muted/50">
+      <section className="px-4 py-16">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -177,9 +248,11 @@ export default function Home() {
                       <h3 className="font-semibold text-lg">{game.name}</h3>
                       <p className="text-sm text-muted-foreground">{game.description}</p>
                     </div>
-                    <Button size="sm">
-                      <Target className="h-4 w-4 mr-2" />
-                      Play
+                    <Button size="sm" asChild>
+                      <Link href="/multiplayer">
+                        <Target className="h-4 w-4 mr-2" />
+                        Play
+                      </Link>
                     </Button>
                   </div>
                 </CardContent>
@@ -190,7 +263,7 @@ export default function Home() {
       </section>
 
       {/* CTA */}
-      <section className="px-4 py-16">
+      <section className="px-4 py-16 bg-muted/50">
         <div className="max-w-4xl mx-auto text-center">
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-8 md:p-12">

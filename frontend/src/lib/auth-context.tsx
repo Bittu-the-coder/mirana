@@ -7,8 +7,8 @@ import { createContext, ReactNode, useContext, useEffect, useState } from 'react
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -33,13 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const response = await api.login({ email, password });
+  const login = async (username: string, password: string) => {
+    const response = await api.login({ username, password });
     setUser(response.user);
   };
 
-  const register = async (username: string, email: string, password: string) => {
-    const response = await api.register({ username, email, password });
+  const register = async (username: string, password: string) => {
+    const response = await api.register({ username, password });
     setUser(response.user);
   };
 

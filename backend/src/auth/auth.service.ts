@@ -10,12 +10,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: { username: string; email: string; password: string }) {
-    const existingEmail = await this.usersService.findByEmail(registerDto.email);
-    if (existingEmail) {
-      throw new ConflictException('Email already exists');
-    }
-
+  async register(registerDto: { username: string; password: string }) {
     const existingUsername = await this.usersService.findByUsername(registerDto.username);
     if (existingUsername) {
       throw new ConflictException('Username already exists');
@@ -29,14 +24,13 @@ export class AuthService {
       user: {
         id: user._id,
         username: user.username,
-        email: user.email,
         stats: user.stats,
       },
     };
   }
 
-  async login(loginDto: { email: string; password: string }) {
-    const user = await this.usersService.findByEmail(loginDto.email);
+  async login(loginDto: { username: string; password: string }) {
+    const user = await this.usersService.findByUsername(loginDto.username);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -53,7 +47,6 @@ export class AuthService {
       user: {
         id: user._id,
         username: user.username,
-        email: user.email,
         avatar: user.avatar,
         stats: user.stats,
       },

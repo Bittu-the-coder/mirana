@@ -1,11 +1,11 @@
 import {
-    ConnectedSocket,
-    MessageBody,
-    OnGatewayConnection,
-    OnGatewayDisconnect,
-    SubscribeMessage,
-    WebSocketGateway,
-    WebSocketServer,
+  ConnectedSocket,
+  MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { GamesService } from '../games/games.service';
@@ -81,16 +81,24 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
       const room = this.multiplayerService.createRoom(data.gameType, match.player1);
       this.multiplayerService.joinRoom(room.id, match.player2);
 
-      const updatedRoom = this.multiplayerService.getRoom(room.id)!;
+      // Auto-ready both players for public matches
+      this.multiplayerService.setPlayerReady(room.id, match.player1.socketId);
+      this.multiplayerService.setPlayerReady(room.id, match.player2.socketId);
 
-      this.server.to(match.player1.socketId).emit('matchFound', { room: updatedRoom });
-      this.server.to(match.player2.socketId).emit('matchFound', { room: updatedRoom });
+      const updatedRoom = this.multiplayerService.getRoom(room.id)!;
 
       // Join socket rooms
       const socket1 = this.server.sockets.sockets.get(match.player1.socketId);
       const socket2 = this.server.sockets.sockets.get(match.player2.socketId);
       socket1?.join(room.id);
       socket2?.join(room.id);
+
+      // Auto-start the game for public matches
+      const startedRoom = this.multiplayerService.startGame(room.id);
+
+      this.server.to(match.player1.socketId).emit('matchFound', { room: startedRoom });
+      this.server.to(match.player2.socketId).emit('matchFound', { room: startedRoom });
+      this.server.to(room.id).emit('gameStart', { room: startedRoom });
     }
   }
 
