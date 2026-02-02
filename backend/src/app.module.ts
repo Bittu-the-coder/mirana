@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
@@ -17,9 +17,27 @@ import { UsersModule } from './users/users.module';
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/mirana',
-      }),
+      useFactory: (config: ConfigService) => {
+        const logger = new Logger('Mongoose');
+        const uri = config.get<string>('MONGODB_URI');
+
+        if (!uri) {
+          logger.warn('⚠️ MONGODB_URI is missing, falling back to localhost.');
+        } else {
+          logger.log('🔌 Attempting to connect to MongoDB...');
+        }
+
+        return {
+          uri: uri || 'mongodb://localhost:27017/mirana',
+          connectionFactory: (connection) => {
+            connection.on('connected', () => logger.log('✅ MongoDB connected successfully'));
+            connection.on('error', (err) => logger.error('❌ MongoDB connection error:', err));
+            return connection;
+          },
+          connectTimeoutMS: 10000, // 10 seconds timeout
+          socketTimeoutMS: 45000,
+        };
+      },
     }),
     AuthModule,
     UsersModule,
