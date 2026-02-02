@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { CommentsModule } from './comments/comments.module';
@@ -15,7 +15,12 @@ import { UsersModule } from './users/users.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://localhost:27017/mirana'),
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/mirana',
+      }),
+    }),
     AuthModule,
     UsersModule,
     GamesModule,
