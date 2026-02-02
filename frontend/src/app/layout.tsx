@@ -17,9 +17,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mirana - Brain Training & Puzzle Community",
-  description: "Improve your cognitive skills through interactive brain games and join a community of puzzle enthusiasts",
-  keywords: ["brain training", "puzzles", "games", "memory", "logic", "multiplayer"],
+  title: "Mirana | Multiplayer Brain Teasers, Logic Riddles & Free Brain Games 2025",
+  description: "Challenge your mind with Mirana - the ultimate community for free brain teasers, multiplayer logic puzzles, and daily riddles. Compete with friends and track your progress in the best brain training games of 2025.",
+  keywords: [
+    "brain training", "puzzles", "logic puzzles", "riddles with answers",
+    "multiplayer brain games", "memory games", "daily puzzles",
+    "free online games 2025", "brain teasers for adults", "competitive logic games"
+  ],
+  authors: [{ name: "Mirana Team" }],
+  openGraph: {
+    title: "Mirana | Multiplayer Brain Teasers & Logic Riddles",
+    description: "The ultimate community for brain game enthusiasts. Play, solve, and compete!",
+    type: "website",
+    locale: "en_US",
+    url: "https://mirana-games.vercel.app", // Adjust if user provides a final domain
+    siteName: "Mirana",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mirana | Best Brain Games 2025",
+    description: "Challenge your mind with multiplayer puzzles and riddles.",
+  },
+  viewport: "width=device-width, initial-scale=1",
+  robots: "index, follow",
 };
 
 export default function RootLayout({
