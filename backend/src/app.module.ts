@@ -20,9 +20,14 @@ import { UsersModule } from './users/users.module';
       useFactory: (config: ConfigService) => {
         const logger = new Logger('Mongoose');
         const uri = config.get<string>('MONGODB_URI');
+        const nodeEnv = config.get<string>('NODE_ENV');
 
         if (!uri) {
-          logger.warn('⚠️ MONGODB_URI is missing, falling back to localhost.');
+          if (nodeEnv === 'production') {
+            logger.error('❌ CRITICAL: MONGODB_URI is missing in production environment!');
+            throw new Error('MONGODB_URI is required in production');
+          }
+          logger.warn('⚠️ MONGODB_URI is missing, falling back to localhost for development.');
         } else {
           logger.log('🔌 Attempting to connect to MongoDB...');
         }
@@ -36,6 +41,7 @@ import { UsersModule } from './users/users.module';
           },
           connectTimeoutMS: 10000, // 10 seconds timeout
           socketTimeoutMS: 45000,
+          serverSelectionTimeoutMS: 10000,
         };
       },
     }),
