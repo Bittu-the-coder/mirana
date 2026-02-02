@@ -55,6 +55,9 @@ export class Puzzle {
 
   @Prop({ default: 0 })
   attemptCount: number;
+
+  @Prop({ default: '' })
+  imageUrl: string;
 }
 
 export const PuzzleSchema = SchemaFactory.createForClass(Puzzle);

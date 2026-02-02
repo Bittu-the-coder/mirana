@@ -34,6 +34,10 @@ export default function ColorMemoryPage() {
 
   useEffect(() => {
     if (user) {
+      if (user.progress?.[GameType.COLOR_MEMORY]) {
+        setLevel(user.progress[GameType.COLOR_MEMORY] + 1);
+      }
+
       api.getBestScore(GameType.COLOR_MEMORY)
         .then(({ bestScore }) => setBestScore(bestScore))
         .catch(console.error);

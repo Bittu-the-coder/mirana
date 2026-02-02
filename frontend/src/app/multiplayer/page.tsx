@@ -7,28 +7,27 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/auth-context';
-import { useSocket } from '@/lib/socket-context';
+import { GameResult, GameSettings, Question, useSocket } from '@/lib/socket-context';
 import { GameType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import {
-    Calculator,
-    CheckCircle,
-    Copy,
-    Grid3X3,
-    Link as LinkIcon,
-    Loader2,
-    MessageSquare,
-    Swords,
-    Trophy,
-    UserPlus,
-    Users,
-    Wifi,
-    WifiOff,
-    XCircle,
-    Zap,
+  Calculator,
+  Clock,
+  Copy,
+  Grid3X3,
+  Loader2,
+  Settings,
+  Swords,
+  Target,
+  Trophy,
+  UserPlus,
+  Users,
+  Wifi,
+  WifiOff,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 const multiplayerGames = [
@@ -41,153 +40,160 @@ const multiplayerGames = [
     players: '2 Players',
   },
   {
-    id: GameType.RIDDLE_ARENA,
-    name: 'Riddle Arena',
-    description: 'Compete in puzzle solving challenges',
-    icon: MessageSquare,
-    color: 'bg-purple-500',
-    players: '2 Players',
-  },
-  {
     id: GameType.MEMORY_MATCH_BATTLE,
     name: 'Memory Match Battle',
-    description: 'Find matching pairs before your opponent',
+    description: 'Find matching pairs before your opponent and beat them',
     icon: Grid3X3,
     color: 'bg-green-500',
     players: '2 Players',
   },
-  {
-    id: GameType.WORD_CHAIN,
-    name: 'Word Chain',
-    description: 'Build words one letter at a time',
-    icon: LinkIcon,
-    color: 'bg-amber-500',
-    players: '2 Players',
-  },
 ];
 
-// Speed Math Game Component
-function SpeedMathGame({
-  room,
-  userId,
-  onSubmitAnswer,
-  onNextRound,
+// Game Settings Component
+function GameSettingsPanel({
+  settings,
+  onSettingsChange,
+  disabled,
 }: {
-  room: any;
-  userId: string;
-  onSubmitAnswer: (answer: number, correct: boolean, points: number) => void;
-  onNextRound: () => void;
+  settings: GameSettings;
+  onSettingsChange: (settings: Partial<GameSettings>) => void;
+  disabled: boolean;
 }) {
-  const [question, setQuestion] = useState({ a: 0, b: 0, op: '+', answer: 0 });
+  return (
+    <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <Settings className="h-4 w-4" />
+        Game Settings
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs text-muted-foreground block mb-2">
+            <Target className="h-3 w-3 inline mr-1" />
+            Questions
+          </label>
+          <div className="flex gap-1">
+            {[5, 10, 15].map(count => (
+              <Button
+                key={count}
+                variant={settings.questionCount === count ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1"
+                onClick={() => onSettingsChange({ questionCount: count })}
+                disabled={disabled}
+              >
+                {count}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-xs text-muted-foreground block mb-2">
+            <Clock className="h-3 w-3 inline mr-1" />
+            Time (s)
+          </label>
+          <div className="flex gap-1">
+            {[10, 15, 20].map(time => (
+              <Button
+                key={time}
+                variant={settings.timePerQuestion === time ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1"
+                onClick={() => onSettingsChange({ timePerQuestion: time })}
+                disabled={disabled}
+              >
+                {time}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Speed Math Game Component - Updated to use server questions
+function SpeedMathGame({
+  questions,
+  settings,
+  userId,
+  onFinish,
+}: {
+  questions: Question[];
+  settings: GameSettings;
+  userId: string;
+  onFinish: (answers: { questionId: number; answer: number; correct: boolean; timeMs: number }[]) => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
+  const [answers, setAnswers] = useState<{ questionId: number; answer: number; correct: boolean; timeMs: number }[]>([]);
+  const [timeLeft, setTimeLeft] = useState(settings.timePerQuestion);
+  const [startTime, setStartTime] = useState(Date.now());
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
-  const [timeLeft, setTimeLeft] = useState(10);
-  const [answered, setAnswered] = useState(false);
 
-  const generateQuestion = useCallback(() => {
-    const ops = ['+', '-', '*'];
-    const op = ops[Math.floor(Math.random() * ops.length)];
-    let a = Math.floor(Math.random() * 20) + 1;
-    let b = Math.floor(Math.random() * 12) + 1;
-
-    // Ensure subtraction doesn't go negative
-    if (op === '-' && b > a) [a, b] = [b, a];
-
-    let answer: number;
-    switch (op) {
-      case '+': answer = a + b; break;
-      case '-': answer = a - b; break;
-      case '*': answer = a * b; break;
-      default: answer = a + b;
-    }
-
-    return { a, b, op, answer };
-  }, []);
+  const currentQuestion = questions[currentIndex];
 
   useEffect(() => {
-    // Generate new question for each round
-    setQuestion(generateQuestion());
+    setStartTime(Date.now());
+    setTimeLeft(settings.timePerQuestion);
     setUserAnswer('');
     setFeedback(null);
-    setAnswered(false);
-    setTimeLeft(10);
-  }, [room.currentRound, generateQuestion]);
+  }, [currentIndex, settings.timePerQuestion]);
 
   useEffect(() => {
-    if (answered || room.status !== 'playing') return;
+    if (timeLeft <= 0) {
+      handleSubmit(true);
+      return;
+    }
 
     const timer = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) {
-          // Time's up - wrong answer
-          setAnswered(true);
-          onSubmitAnswer(0, false, 0);
-          return 0;
-        }
-        return t - 1;
-      });
+      setTimeLeft(t => t - 1);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [answered, room.status, onSubmitAnswer]);
+  }, [timeLeft]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (answered) return;
+  const handleSubmit = (timeout = false) => {
+    const timeMs = Date.now() - startTime;
+    const answerNum = timeout ? -1 : parseInt(userAnswer);
+    const correct = !timeout && answerNum === currentQuestion.answer;
 
-    const isCorrect = parseInt(userAnswer) === question.answer;
-    const points = isCorrect ? 10 + timeLeft : 0;
+    setFeedback(correct ? 'correct' : 'wrong');
 
-    setFeedback(isCorrect ? 'correct' : 'wrong');
-    setAnswered(true);
-    onSubmitAnswer(parseInt(userAnswer), isCorrect, points);
+    const newAnswer = {
+      questionId: currentQuestion.id,
+      answer: answerNum,
+      correct,
+      timeMs,
+    };
+
+    const updatedAnswers = [...answers, newAnswer];
+    setAnswers(updatedAnswers);
+
+    setTimeout(() => {
+      if (currentIndex + 1 >= questions.length) {
+        onFinish(updatedAnswers);
+      } else {
+        setCurrentIndex(i => i + 1);
+      }
+    }, 800);
   };
 
-  const mePlayer = room.players.find((p: any) => p.id === userId);
-  const opponent = room.players.find((p: any) => p.id !== userId);
-
-  if (room.status === 'finished') {
-    const winner = room.players.reduce((w: any, p: any) => !w || p.score > w.score ? p : w, null);
-    const isWinner = winner?.id === userId;
-
-    return (
-      <div className="text-center space-y-6">
-        <Trophy className={`h-20 w-20 mx-auto ${isWinner ? 'text-amber-500' : 'text-gray-400'}`} />
-        <h2 className="text-2xl font-bold">{isWinner ? 'You Win!' : 'Game Over'}</h2>
-        <div className="grid grid-cols-2 gap-4">
-          {room.players.map((p: any) => (
-            <div key={p.id} className={`p-4 rounded-lg ${p.id === winner?.id ? 'bg-amber-500/20 border-2 border-amber-500' : 'bg-muted'}`}>
-              <p className="font-medium">{p.username}</p>
-              <p className="text-2xl font-bold">{p.score}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userAnswer) return;
+    handleSubmit(false);
+  };
 
   return (
     <div className="space-y-6">
-      {/* Scoreboard */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="p-3 bg-primary/10 rounded-lg text-center">
-          <p className="text-sm text-muted-foreground">{mePlayer?.username || 'You'}</p>
-          <p className="text-2xl font-bold">{mePlayer?.score || 0}</p>
-        </div>
-        <div className="p-3 bg-muted rounded-lg text-center">
-          <p className="text-sm text-muted-foreground">{opponent?.username || 'Opponent'}</p>
-          <p className="text-2xl font-bold">{opponent?.score || 0}</p>
-        </div>
-      </div>
-
-      {/* Round indicator */}
       <div className="flex items-center justify-between text-sm">
-        <span>Round {room.currentRound} of {room.maxRounds}</span>
+        <span>Question {currentIndex + 1} of {questions.length}</span>
         <Badge variant={timeLeft <= 3 ? 'destructive' : 'secondary'}>{timeLeft}s</Badge>
       </div>
-      <Progress value={(timeLeft / 10) * 100} className="h-2" />
+      <Progress value={(timeLeft / settings.timePerQuestion) * 100} className="h-2" />
 
-      {/* Question */}
       <div className={cn(
         "text-center p-8 rounded-xl transition-colors",
         feedback === 'correct' ? 'bg-green-500/20' :
@@ -195,41 +201,135 @@ function SpeedMathGame({
         'bg-primary/10'
       )}>
         <p className="text-4xl font-bold">
-          {question.a} {question.op} {question.b} = ?
+          {currentQuestion.a} {currentQuestion.op} {currentQuestion.b} = ?
         </p>
       </div>
 
-      {/* Answer input */}
-      {!answered ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            type="number"
-            value={userAnswer}
-            onChange={(e) => setUserAnswer(e.target.value)}
-            placeholder="Your answer"
-            className="text-center text-2xl h-14"
-            autoFocus
-          />
-          <Button type="submit" className="w-full" disabled={!userAnswer}>
-            Submit
-          </Button>
-        </form>
-      ) : (
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-2">
-            {feedback === 'correct' ? (
-              <><CheckCircle className="h-6 w-6 text-green-500" /> Correct!</>
-            ) : (
-              <><XCircle className="h-6 w-6 text-red-500" /> Answer was {question.answer}</>
-            )}
-          </div>
-          {room.currentRound < room.maxRounds && (
-            <Button onClick={onNextRound} className="w-full">
-              Next Round
-            </Button>
-          )}
+      <form onSubmit={handleFormSubmit} className="space-y-4">
+        <Input
+          type="number"
+          value={userAnswer}
+          onChange={(e) => setUserAnswer(e.target.value)}
+          placeholder="Your answer"
+          className="text-center text-2xl h-14"
+          autoFocus
+          disabled={feedback !== null}
+        />
+        <Button type="submit" className="w-full" disabled={!userAnswer || feedback !== null}>
+          Submit
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+// Results Screen Component
+function GameResultScreen({
+  result,
+  userId,
+  onPlayAgain,
+  onLeave,
+}: {
+  result: GameResult;
+  userId: string;
+  onPlayAgain: () => void;
+  onLeave: () => void;
+}) {
+  const myResult = result.playerResults.find(p => p.id === userId);
+  const opponentResult = result.playerResults.find(p => p.id !== userId);
+
+  // Winner is determined by server (considers time tiebreaker)
+  const isWinner = result.winner?.id === userId;
+  const isDraw = result.winner === null;
+  const isTiedScore = myResult?.score === opponentResult?.score;
+
+  const formatTime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const tenths = Math.floor((ms % 1000) / 100);
+    return `${seconds}.${tenths}s`;
+  };
+
+  return (
+    <div className="text-center space-y-6">
+      <div className={cn(
+        "py-6 rounded-xl",
+        isWinner ? "bg-gradient-to-r from-amber-500/20 to-yellow-500/20" :
+        isDraw ? "bg-blue-500/20" :
+        "bg-muted"
+      )}>
+        <Trophy className={cn(
+          "h-16 w-16 mx-auto mb-3",
+          isWinner ? "text-amber-500" : isDraw ? "text-blue-500" : "text-gray-400"
+        )} />
+        <h2 className="text-2xl font-bold">
+          {isDraw ? "It's a Draw!" : isWinner ? '🎉 You Win!' : 'Game Over'}
+        </h2>
+        {isTiedScore && !isDraw && (
+          <p className="text-sm text-muted-foreground mt-1">
+            {isWinner ? "You were faster!" : "Opponent was faster!"}
+          </p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className={cn(
+          "p-4 rounded-lg",
+          isWinner ? "bg-green-500/20 border-2 border-green-500" :
+          isDraw ? "bg-blue-500/10 border-2 border-blue-500" : "bg-muted"
+        )}>
+          <p className="text-sm text-muted-foreground mb-1">You</p>
+          <p className="text-3xl font-bold">{myResult?.score || 0}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {myResult?.correctAnswers || 0} correct
+          </p>
+          <p className="text-xs text-muted-foreground">
+            ⏱ {formatTime(myResult?.totalTime || 0)}
+          </p>
         </div>
-      )}
+        <div className={cn(
+          "p-4 rounded-lg",
+          !isWinner && !isDraw ? "bg-amber-500/20 border-2 border-amber-500" :
+          isDraw ? "bg-blue-500/10 border-2 border-blue-500" : "bg-muted"
+        )}>
+          <p className="text-sm text-muted-foreground mb-1">{opponentResult?.username || 'Opponent'}</p>
+          <p className="text-3xl font-bold">{opponentResult?.score || 0}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {opponentResult?.correctAnswers || 0} correct
+          </p>
+          <p className="text-xs text-muted-foreground">
+            ⏱ {formatTime(opponentResult?.totalTime || 0)}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Button onClick={onPlayAgain} className="w-full">
+          Play Again
+        </Button>
+        <Button variant="outline" onClick={onLeave} className="w-full">
+          Back to Games
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Waiting Screen while opponent finishes
+function WaitingForOpponent({ room, userId }: { room: any; userId: string }) {
+  const opponent = room.players.find((p: any) => p.id !== userId);
+  const meFinished = room.players.find((p: any) => p.id === userId)?.finished;
+
+  return (
+    <div className="text-center space-y-6 py-8">
+      <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
+      <div>
+        <h3 className="text-lg font-semibold mb-2">
+          {meFinished ? "Waiting for opponent to finish..." : "Opponent finished!"}
+        </h3>
+        <p className="text-muted-foreground">
+          {opponent?.username} is {opponent?.finished ? "done" : "still playing"}
+        </p>
+      </div>
     </div>
   );
 }
@@ -241,18 +341,35 @@ export default function MultiplayerPage() {
     findMatch,
     cancelMatchmaking,
     createPrivateRoom,
+    updateSettings,
     joinWithCode,
     setReady,
     leaveRoom,
-    submitAnswer,
-    nextRound,
+    finishGame,
     matchmakingStatus,
     currentRoom,
     inviteCode,
+    gameQuestions,
+    gameSettings,
+    gameResult,
   } = useSocket();
   const [selectedGame, setSelectedGame] = useState<GameType | null>(null);
   const [joinCode, setJoinCode] = useState('');
   const [showJoinDialog, setShowJoinDialog] = useState(false);
+  const [localSettings, setLocalSettings] = useState<GameSettings>({ questionCount: 5, timePerQuestion: 15 });
+  const [hasFinished, setHasFinished] = useState(false);
+
+  useEffect(() => {
+    if (currentRoom?.settings) {
+      setLocalSettings(currentRoom.settings as GameSettings);
+    }
+  }, [currentRoom?.settings]);
+
+  useEffect(() => {
+    if (gameResult) {
+      setHasFinished(false);
+    }
+  }, [gameResult]);
 
   const copyInviteCode = () => {
     if (inviteCode) {
@@ -269,16 +386,39 @@ export default function MultiplayerPage() {
     }
   };
 
-  const handleSubmitAnswer = (answer: number, correct: boolean, points: number) => {
-    if (currentRoom) {
-      submitAnswer(currentRoom.id, answer, correct, points);
+  const handleSettingsChange = (newSettings: Partial<GameSettings>) => {
+    const updated = { ...localSettings, ...newSettings };
+    setLocalSettings(updated);
+    if (currentRoom && inviteCode) {
+      updateSettings(currentRoom.id, newSettings);
     }
   };
 
-  const handleNextRound = () => {
+  const handleCreatePrivateRoom = (gameType: GameType) => {
+    createPrivateRoom(gameType, localSettings);
+    setSelectedGame(gameType);
+  };
+
+  const handleFinishGame = (answers: { questionId: number; answer: number; correct: boolean; timeMs: number }[]) => {
     if (currentRoom) {
-      nextRound(currentRoom.id);
+      finishGame(currentRoom.id, answers);
+      setHasFinished(true);
     }
+  };
+
+  const handlePlayAgain = () => {
+    if (currentRoom) {
+      leaveRoom(currentRoom.id);
+    }
+    setSelectedGame(null);
+  };
+
+  const handleLeave = () => {
+    if (currentRoom) {
+      leaveRoom(currentRoom.id);
+    }
+    setSelectedGame(null);
+    setHasFinished(false);
   };
 
   // Not logged in
@@ -299,11 +439,55 @@ export default function MultiplayerPage() {
     );
   }
 
-  // Show game in progress
-  if (currentRoom && currentRoom.status === 'playing') {
+  // Show game results
+  if (gameResult) {
     return (
       <div className="min-h-screen px-4 py-8">
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle>Game Complete!</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <GameResultScreen
+                result={gameResult}
+                userId={user.id}
+                onPlayAgain={handlePlayAgain}
+                onLeave={handleLeave}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show game in progress
+  if (currentRoom && currentRoom.status === 'playing' && gameQuestions.length > 0 && gameSettings) {
+    // Player has finished, waiting for opponent
+    if (hasFinished) {
+      return (
+        <div className="min-h-screen px-4 py-8">
+          <div className="max-w-2xl mx-auto">
+            <Card>
+              <CardHeader className="text-center">
+                <CardTitle className="flex items-center justify-center gap-2">
+                  <Zap className="h-5 w-5 text-amber-500" />
+                  Speed Math Duel
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <WaitingForOpponent room={currentRoom} userId={user.id} />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen px-4 py-8">
+        <div className="max-w-2xl mx-auto">
           <Card>
             <CardHeader className="text-center">
               <CardTitle className="flex items-center justify-center gap-2">
@@ -313,10 +497,10 @@ export default function MultiplayerPage() {
             </CardHeader>
             <CardContent>
               <SpeedMathGame
-                room={currentRoom}
+                questions={gameQuestions}
+                settings={gameSettings}
                 userId={user.id}
-                onSubmitAnswer={handleSubmitAnswer}
-                onNextRound={handleNextRound}
+                onFinish={handleFinishGame}
               />
             </CardContent>
           </Card>
@@ -327,9 +511,11 @@ export default function MultiplayerPage() {
 
   // Waiting room or matchmaking
   if (matchmakingStatus === 'searching' || currentRoom) {
+    const isHost = currentRoom && inviteCode;
+
     return (
       <div className="min-h-screen px-4 py-8">
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-2xl mx-auto">
           <Card>
             <CardHeader className="text-center">
               {matchmakingStatus === 'searching' ? (
@@ -355,23 +541,57 @@ export default function MultiplayerPage() {
             <CardContent className="space-y-4">
               {currentRoom && (
                 <>
-                  <div className="space-y-2">
+                  {/* Game Settings - Only for private rooms and only host can change */}
+                  {isHost && currentRoom.status === 'waiting' && (
+                    <GameSettingsPanel
+                      settings={localSettings}
+                      onSettingsChange={handleSettingsChange}
+                      disabled={currentRoom.players.length >= 2}
+                    />
+                  )}
+
+                  {/* Player list */}
+                  <div className="space-y-3">
                     <p className="text-sm font-medium text-muted-foreground">Players:</p>
-                    {currentRoom.players.map((player: any, index: number) => (
-                      <div key={player.id || player.socketId || `player-${index}`} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            {player.username?.[0]?.toUpperCase() || '?'}
+                    {currentRoom.players.map((player: any, index: number) => {
+                      const isMe = player.id === user?.id;
+                      return (
+                        <div
+                          key={player.id || player.socketId || `player-${index}`}
+                          className={cn(
+                            "flex items-center justify-between p-4 rounded-lg transition-all",
+                            isMe
+                              ? "bg-primary/20 border-2 border-primary/50"
+                              : "bg-muted",
+                            player.ready && "ring-2 ring-green-500/50"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "h-10 w-10 rounded-full flex items-center justify-center text-lg font-bold",
+                              isMe ? "bg-primary text-primary-foreground" : "bg-secondary"
+                            )}>
+                              {player.username?.[0]?.toUpperCase() || '?'}
+                            </div>
+                            <div>
+                              <span className="font-medium flex items-center gap-2">
+                                {player.username}
+                                {isMe && <Badge variant="outline" className="text-xs">You</Badge>}
+                              </span>
+                            </div>
                           </div>
-                          <span className="font-medium">{player.username}</span>
+                          <Badge
+                            variant={player.ready ? 'default' : 'secondary'}
+                            className={player.ready ? 'bg-green-500' : ''}
+                          >
+                            {player.ready ? '✓ Ready' : 'Waiting'}
+                          </Badge>
                         </div>
-                        <Badge variant={player.ready ? 'default' : 'secondary'}>
-                          {player.ready ? 'Ready' : 'Waiting'}
-                        </Badge>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {currentRoom.players.length < 2 && (
-                      <div className="p-3 border border-dashed rounded-lg text-center text-muted-foreground">
+                      <div className="p-4 border-2 border-dashed rounded-lg text-center text-muted-foreground animate-pulse">
+                        <Users className="h-6 w-6 mx-auto mb-2 opacity-50" />
                         Waiting for opponent...
                       </div>
                     )}
@@ -392,14 +612,20 @@ export default function MultiplayerPage() {
                     </div>
                   )}
 
-                  {/* Ready Button - Show when 2 players are in the room */}
+                  {/* Ready Button */}
                   {currentRoom.players.length >= 2 && currentRoom.status === 'waiting' && (
                     <Button
-                      className="w-full"
+                      className="w-full h-12 text-lg font-semibold"
                       onClick={() => setReady(currentRoom.id)}
-                      disabled={currentRoom.players.find((p: any) => p.socketId === user?.id)?.ready}
+                      disabled={currentRoom.players.find((p: any) => p.id === user?.id)?.ready}
                     >
-                      {currentRoom.players.every((p: any) => p.ready) ? 'Starting...' : "I'm Ready!"}
+                      {currentRoom.players.every((p: any) => p.ready) ? (
+                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Starting Game...</>
+                      ) : currentRoom.players.find((p: any) => p.id === user?.id)?.ready ? (
+                        '✓ Ready - Waiting for opponent'
+                      ) : (
+                        <>🎮 I'm Ready!</>
+                      )}
                     </Button>
                   )}
                 </>
@@ -430,111 +656,109 @@ export default function MultiplayerPage() {
   // Game selection
   return (
     <div className="min-h-screen px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-            <Swords className="h-8 w-8 text-primary" />
-            Multiplayer Arena
-          </h1>
-          <p className="text-muted-foreground">
-            Challenge other players in real-time battles
-          </p>
-          <div className="flex items-center gap-2 mt-4">
-            {isConnected ? (
-              <Badge variant="outline" className="text-green-500 border-green-500">
-                <Wifi className="h-3 w-3 mr-1" /> Connected
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-red-500 border-red-500">
-                <WifiOff className="h-3 w-3 mr-1" /> Disconnected
-              </Badge>
-            )}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Swords className="h-8 w-8 text-primary" />
+              Multiplayer Arena
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Challenge other players in real-time battles
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {isConnected ? (
+                <Badge variant="outline" className="text-green-500 border-green-500">
+                  <Wifi className="h-3 w-3 mr-1" /> Connected
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-red-500 border-red-500">
+                  <WifiOff className="h-3 w-3 mr-1" /> Disconnected
+                </Badge>
+              )}
+            </div>
+
+            <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Join Code
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Join Private Game</DialogTitle>
+                  <DialogDescription>
+                    Enter the 6-character invite code from your friend
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <Input
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="Enter code"
+                    className="text-center text-2xl font-mono tracking-wider"
+                    maxLength={6}
+                  />
+                  <Button
+                    onClick={handleJoinWithCode}
+                    className="w-full"
+                    disabled={joinCode.length !== 6}
+                  >
+                    Join Game
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Join with Code
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Join Private Room</DialogTitle>
-                <DialogDescription>
-                  Enter the 6-character invite code to join a friends game
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <Input
-                  placeholder="Enter code"
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
-                  className="font-mono text-lg text-center uppercase"
-                  maxLength={6}
-                />
-                <Button
-                  className="w-full"
-                  onClick={handleJoinWithCode}
-                  disabled={joinCode.length !== 6}
-                >
-                  Join Room
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Games Grid */}
-        <div className="grid sm:grid-cols-2 gap-4">
+        {/* Game list */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {multiplayerGames.map((game) => {
             const Icon = game.icon;
             return (
-              <Card key={game.id} className="group hover:border-primary transition-colors">
+              <Card key={game.id} className="group hover:border-primary transition-all duration-200">
                 <CardHeader>
-                  <div className="flex items-start gap-4">
-                    <div className={cn('h-12 w-12 rounded-lg flex items-center justify-center', game.color)}>
-                      <Icon className="h-6 w-6 text-white" />
+                  <div className="flex items-start justify-between">
+                    <div className={cn('h-12 w-12 rounded-lg bg-muted flex items-center justify-center', game.color)}>
+                      <Icon className="h-6 w-6" />
                     </div>
-                    <div className="flex-1">
-                      <CardTitle className="group-hover:text-primary transition-colors">
-                        {game.name}
-                      </CardTitle>
-                      <CardDescription>{game.description}</CardDescription>
-                    </div>
+                    <Badge variant="secondary">
+                      {game.players}
+                    </Badge>
                   </div>
+                  <CardTitle className="text-xl mt-4 group-hover:text-primary transition-colors">
+                    {game.name}
+                  </CardTitle>
+                  <CardDescription className="text-sm line-clamp-2">
+                    {game.description}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="secondary">{game.players}</Badge>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedGame(game.id);
-                          createPrivateRoom(game.id);
-                        }}
-                        disabled={!isConnected}
-                      >
-                        Private
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setSelectedGame(game.id);
-                          findMatch(game.id);
-                        }}
-                        disabled={!isConnected}
-                      >
-                        <Zap className="h-4 w-4 mr-1" />
-                        Play
-                      </Button>
-                    </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => handleCreatePrivateRoom(game.id as GameType)}
+                      disabled={!isConnected}
+                    >
+                      Private
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      onClick={() => {
+                        setSelectedGame(game.id as GameType);
+                        findMatch(game.id as GameType);
+                      }}
+                      disabled={!isConnected}
+                    >
+                      <Zap className="h-4 w-4 mr-1" />
+                      Play
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

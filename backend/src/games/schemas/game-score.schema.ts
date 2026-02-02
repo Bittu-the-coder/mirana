@@ -16,6 +16,7 @@ export enum GameType {
   RIDDLE_ARENA = 'riddle_arena',
   MEMORY_MATCH_BATTLE = 'memory_match_battle',
   WORD_CHAIN = 'word_chain',
+  WORD_CONNECT = 'word_connect',
 }
 
 @Schema({ timestamps: true })

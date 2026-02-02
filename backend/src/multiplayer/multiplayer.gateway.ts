@@ -1,11 +1,11 @@
 import {
-  ConnectedSocket,
-  MessageBody,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-  SubscribeMessage,
-  WebSocketGateway,
-  WebSocketServer,
+    ConnectedSocket,
+    MessageBody,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    SubscribeMessage,
+    WebSocketGateway,
+    WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { GamesService } from '../games/games.service';
@@ -52,6 +52,7 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { userId: string; username: string }
   ) {
+    console.log('Authentication received:', { socketId: client.id, userId: data.userId, username: data.username });
     this.socketUserMap.set(client.id, { odId: data.userId, username: data.username });
     await this.usersService.setOnlineStatus(data.userId, true);
     client.emit('authenticated', { success: true });
@@ -63,6 +64,7 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
     @MessageBody() data: { gameType: GameType }
   ) {
     const user = this.socketUserMap.get(client.id);
+    console.log('findMatch - user from map:', user);
     if (!user) {
       client.emit('error', { message: 'Not authenticated' });
       return;
@@ -81,24 +83,14 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
       const room = this.multiplayerService.createRoom(data.gameType, match.player1);
       this.multiplayerService.joinRoom(room.id, match.player2);
 
-      // Auto-ready both players for public matches
-      this.multiplayerService.setPlayerReady(room.id, match.player1.socketId);
-      this.multiplayerService.setPlayerReady(room.id, match.player2.socketId);
-
-      const updatedRoom = this.multiplayerService.getRoom(room.id)!;
-
-      // Join socket rooms
       const socket1 = this.server.sockets.sockets.get(match.player1.socketId);
       const socket2 = this.server.sockets.sockets.get(match.player2.socketId);
       socket1?.join(room.id);
       socket2?.join(room.id);
 
-      // Auto-start the game for public matches
-      const startedRoom = this.multiplayerService.startGame(room.id);
-
-      this.server.to(match.player1.socketId).emit('matchFound', { room: startedRoom });
-      this.server.to(match.player2.socketId).emit('matchFound', { room: startedRoom });
-      this.server.to(room.id).emit('gameStart', { room: startedRoom });
+      this.server.to(match.player1.socketId).emit('matchFound', { room });
+      this.server.to(match.player2.socketId).emit('matchFound', { room });
+      this.server.to(room.id).emit('playerJoined', { room });
     }
   }
 
@@ -111,22 +103,41 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
   @SubscribeMessage('createPrivateRoom')
   handleCreatePrivateRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { gameType: GameType }
+    @MessageBody() data: { gameType: GameType; settings?: { questionCount?: number; timePerQuestion?: number } }
   ) {
     const user = this.socketUserMap.get(client.id);
+    console.log('createPrivateRoom - user from map:', user);
     if (!user) {
       client.emit('error', { message: 'Not authenticated' });
       return;
     }
 
+    const settings = {
+      questionCount: data.settings?.questionCount || 5,
+      timePerQuestion: data.settings?.timePerQuestion || 15,
+    };
+
     const room = this.multiplayerService.createRoom(data.gameType, {
       userId: user.odId,
       username: user.username,
       socketId: client.id,
-    }, true);
+    }, true, settings);
+
+    console.log('Room created with players:', room.players);
 
     client.join(room.id);
     client.emit('roomCreated', { room, inviteCode: room.inviteCode });
+  }
+
+  @SubscribeMessage('updateSettings')
+  handleUpdateSettings(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: string; settings: { questionCount?: number; timePerQuestion?: number } }
+  ) {
+    const room = this.multiplayerService.updateRoomSettings(data.roomId, data.settings);
+    if (room) {
+      this.server.to(data.roomId).emit('settingsUpdated', { room });
+    }
   }
 
   @SubscribeMessage('joinWithCode')
@@ -172,8 +183,13 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
     this.server.to(data.roomId).emit('playerReady', { room });
 
     if (this.multiplayerService.areAllPlayersReady(data.roomId)) {
+      const questions = this.multiplayerService.generateQuestions(data.roomId);
       const startedRoom = this.multiplayerService.startGame(data.roomId);
-      this.server.to(data.roomId).emit('gameStart', { room: startedRoom });
+      this.server.to(data.roomId).emit('gameStart', {
+        room: startedRoom,
+        questions,
+        settings: startedRoom?.settings
+      });
     }
   }
 
@@ -194,33 +210,79 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
     });
   }
 
-  @SubscribeMessage('nextRound')
-  handleNextRound(
+  @SubscribeMessage('finishGame')
+  async handleFinishGame(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string }
+    @MessageBody() data: { roomId: string; answers: { questionId: number; answer: number; correct: boolean; timeMs: number }[] }
   ) {
-    const room = this.multiplayerService.nextRound(data.roomId);
-    if (!room) return;
+    console.log(`Player ${client.id} finishing game with answers:`, data.answers);
 
-    if (room.status === 'finished') {
+    const updatedRoom = this.multiplayerService.finishPlayerGame(data.roomId, client.id, data.answers);
+    if (!updatedRoom) {
+      console.log('Room not found:', data.roomId);
+      return;
+    }
+
+    console.log('Room players after finish:', updatedRoom.players.map(p => ({
+      id: p.id,
+      username: p.username,
+      score: p.score,
+      finished: p.finished,
+      answersCount: p.answers?.length
+    })));
+
+    this.server.to(data.roomId).emit('playerFinished', {
+      playerId: client.id,
+      room: updatedRoom
+    });
+
+    if (this.multiplayerService.areAllPlayersFinished(data.roomId)) {
+      // Get the fresh room with all player data
+      const room = this.multiplayerService.getRoom(data.roomId);
+      if (!room) return;
+
+      console.log('All players finished. Building results for players:', room.players.map(p => ({
+        id: p.id,
+        username: p.username,
+        score: p.score,
+        answersLength: p.answers?.length,
+        totalTime: p.answers?.reduce((sum, a) => sum + a.timeMs, 0)
+      })));
+
       const winner = this.multiplayerService.getWinner(data.roomId);
-      this.server.to(data.roomId).emit('gameEnd', { room, winner });
+      room.status = 'finished';
 
-      // Save scores for all players
-      room.players.forEach(async (player) => {
+      const playerResults = room.players.map(p => ({
+        id: p.id,
+        username: p.username,
+        score: p.score,
+        correctAnswers: p.answers?.filter(a => a.correct).length || 0,
+        totalTime: p.answers?.reduce((sum, a) => sum + a.timeMs, 0) || 0,
+        isWinner: winner?.id === p.id
+      }));
+
+      console.log('Final results:', { winner, playerResults });
+
+      const results = {
+        room,
+        winner,
+        playerResults
+      };
+
+      this.server.to(data.roomId).emit('gameEnd', results);
+
+      for (const player of room.players) {
         await this.gamesService.submitScore(player.id, {
           gameType: room.gameType,
           score: player.score,
           isMultiplayer: true,
           isWinner: winner?.id === player.id,
         });
-      });
+      }
 
       setTimeout(() => {
         this.multiplayerService.removeRoom(data.roomId);
-      }, 5000);
-    } else {
-      this.server.to(data.roomId).emit('newRound', { room });
+      }, 10000);
     }
   }
 

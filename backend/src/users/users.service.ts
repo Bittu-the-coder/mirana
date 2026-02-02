@@ -68,4 +68,15 @@ export class UsersService {
       .select('-password')
       .exec();
   }
+
+  async updateProgress(userId: string, gameType: string, level: number): Promise<void> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) return;
+
+    const currentLevel = user.progress.get(gameType) || 0;
+    if (level > currentLevel) {
+      user.progress.set(gameType, level);
+      await user.save();
+    }
+  }
 }

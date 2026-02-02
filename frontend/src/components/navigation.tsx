@@ -158,8 +158,8 @@ export function Navigation() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <div className="flex items-center gap-3 mb-6">
+            <SheetContent side="right" className="w-[280px] sm:w-[320px] p-4 bg-card">
+              <div className="flex items-center gap-3 mb-6 pt-2">
                 <Image src="/logo.png" alt="Mirana" width={32} height={32} className="rounded-lg" />
                 <span className="text-xl font-bold">Mirana</span>
               </div>

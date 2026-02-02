@@ -12,6 +12,7 @@ import {
     ArrowLeft,
     CheckCircle,
     Clock,
+    Eye,
     Lightbulb,
     Loader2,
     MessageSquare,
@@ -37,6 +38,7 @@ export default function PuzzlePage({ params }: PageProps) {
   const [submitting, setSubmitting] = useState(false);
   const [solved, setSolved] = useState(false);
   const [showHints, setShowHints] = useState<number[]>([]);
+  const [showSolution, setShowSolution] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [startTime] = useState(Date.now());
 
@@ -173,6 +175,17 @@ export default function PuzzlePage({ params }: PageProps) {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Puzzle Image */}
+            {puzzle.imageUrl && (
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted">
+                <img
+                  src={puzzle.imageUrl}
+                  alt={puzzle.title}
+                  className="h-full w-full object-contain"
+                />
+              </div>
+            )}
+
             {/* Puzzle Content */}
             <div className="p-6 bg-muted rounded-lg">
               <p className="text-lg whitespace-pre-wrap">{puzzle.content}</p>
@@ -190,33 +203,61 @@ export default function PuzzlePage({ params }: PageProps) {
               </span>
             </div>
 
-            {/* Hints */}
-            {puzzle.hints && puzzle.hints.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Hints:</p>
-                <div className="flex gap-2">
-                  {puzzle.hints.map((hint, index) => (
-                    <div key={index}>
-                      {showHints.includes(index) ? (
-                        <Badge variant="secondary" className="py-2">
-                          <Lightbulb className="h-3 w-3 mr-1" />
-                          {hint}
-                        </Badge>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => revealHint(index)}
-                        >
-                          <Lightbulb className="h-4 w-4 mr-1" />
-                          Hint {index + 1}
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+            {/* Hints & Solution */}
+            <div className="space-y-4">
+              {puzzle.hints && puzzle.hints.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Hints:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {puzzle.hints.map((hint, index) => (
+                      <div key={index}>
+                        {showHints.includes(index) ? (
+                          <Badge variant="secondary" className="py-2">
+                            <Lightbulb className="h-3 w-3 mr-1" />
+                            {hint}
+                          </Badge>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => revealHint(index)}
+                          >
+                            <Lightbulb className="h-4 w-4 mr-1" />
+                            Hint {index + 1}
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              )}
+
+              <div>
+                {showSolution ? (
+                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p className="text-sm font-medium text-primary mb-1 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Correct Solution:
+                    </p>
+                    <p className="font-bold text-lg">{puzzle.solution}</p>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-primary"
+                    onClick={() => {
+                      if (confirm('Revealing the solution will spoil the fun! Are you sure?')) {
+                        setShowSolution(true);
+                      }
+                    }}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    See Solution
+                  </Button>
+                )}
               </div>
-            )}
+            </div>
 
             <Separator />
 

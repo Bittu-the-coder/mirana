@@ -141,10 +141,14 @@ export default function PuzzlesPage() {
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <div className={cn(
-                        'h-12 w-12 rounded-lg flex items-center justify-center shrink-0',
-                        categoryColors[puzzle.category]
+                        'h-12 w-12 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border bg-muted',
+                        !puzzle.imageUrl && categoryColors[puzzle.category]
                       )}>
-                        <Puzzle className="h-6 w-6" />
+                        {puzzle.imageUrl ? (
+                          <img src={puzzle.imageUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <Puzzle className="h-6 w-6" />
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">

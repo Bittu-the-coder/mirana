@@ -7,6 +7,7 @@ import { GamesModule } from './games/games.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { MultiplayerModule } from './multiplayer/multiplayer.module';
 import { PuzzlesModule } from './puzzles/puzzles.module';
+import { UploadModule } from './upload/upload.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { UsersModule } from './users/users.module';
     CommentsModule,
     LeaderboardModule,
     MultiplayerModule,
+    UploadModule,
   ],
 })
 export class AppModule {}

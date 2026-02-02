@@ -43,6 +43,11 @@ export class GamesService {
 
     await this.usersService.updateStats(userId, statsUpdate);
 
+    // Update level progress if applicable
+    if (data.level && !data.isMultiplayer) {
+      await this.usersService.updateProgress(userId, data.gameType, data.level);
+    }
+
     return gameScore;
   }
 

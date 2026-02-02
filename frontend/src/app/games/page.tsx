@@ -1,17 +1,20 @@
+'use client';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/lib/auth-context';
 import {
-    Eye,
-    Grid3X3,
-    Hash,
-    Palette,
-    Play,
-    Puzzle,
-    Route,
-    Scale,
-    Sparkles,
-    Type,
+  Eye,
+  Grid3X3,
+  Hash,
+  Palette,
+  Play,
+  Puzzle,
+  Route,
+  Scale,
+  Sparkles,
+  Type
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -109,6 +112,7 @@ const difficultyColors: Record<string, string> = {
 };
 
 export default function GamesPage() {
+  const { user } = useAuth();
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-6xl mx-auto">
@@ -145,9 +149,16 @@ export default function GamesPage() {
                   <CardTitle className="text-lg mt-4 group-hover:text-primary transition-colors">
                     {game.name}
                   </CardTitle>
-                  <CardDescription className="text-sm">
-                    {game.description}
-                  </CardDescription>
+                  <div className="flex items-center justify-between mt-1">
+                    <CardDescription className="text-sm">
+                      {game.description}
+                    </CardDescription>
+                    {user?.progress?.[game.id.replace(/-/g, '_')] && (
+                      <Badge variant="outline" className="text-[10px] h-5 py-0 px-1 border-primary/30 text-primary">
+                        Lvl {user.progress[game.id.replace(/-/g, '_')]}
+                      </Badge>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">

@@ -26,6 +26,10 @@ export default function MemoryPathPage() {
 
   useEffect(() => {
     if (user) {
+      if (user.progress?.[GameType.MEMORY_PATH]) {
+        setLevel(user.progress[GameType.MEMORY_PATH] + 1);
+      }
+
       api.getBestScore(GameType.MEMORY_PATH)
         .then(({ bestScore }) => setBestScore(bestScore))
         .catch(console.error);

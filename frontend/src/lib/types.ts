@@ -6,6 +6,7 @@ export interface User {
   stats: UserStats;
   friends?: string[];
   isOnline?: boolean;
+  progress?: Record<string, number>;
   createdAt?: string;
 }
 
@@ -36,6 +37,7 @@ export enum GameType {
   RIDDLE_ARENA = 'riddle_arena',
   MEMORY_MATCH_BATTLE = 'memory_match_battle',
   WORD_CHAIN = 'word_chain',
+  WORD_CONNECT = 'word_connect',
 }
 
 export interface GameScore {
@@ -80,6 +82,7 @@ export interface Puzzle {
   solvedCount: number;
   attemptCount: number;
   createdAt: string;
+  imageUrl?: string;
 }
 
 export interface Comment {
@@ -101,6 +104,10 @@ export interface GameRoom {
   currentRound: number;
   maxRounds: number;
   inviteCode?: string;
+  settings?: {
+    questionCount: number;
+    timePerQuestion: number;
+  };
 }
 
 export interface RoomPlayer {
@@ -109,4 +116,6 @@ export interface RoomPlayer {
   socketId: string;
   score: number;
   ready: boolean;
+  finished?: boolean;
+  answers?: { questionId: number; answer: number; correct: boolean; timeMs: number }[];
 }

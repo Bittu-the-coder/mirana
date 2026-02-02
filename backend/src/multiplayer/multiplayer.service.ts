@@ -1,15 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { GameType } from '../games/schemas/game-score.schema';
 
+export interface GameSettings {
+  questionCount: number;
+  timePerQuestion: number;
+}
+
+export interface Question {
+  id: number;
+  a: number;
+  b: number;
+  op: string;
+  answer: number;
+}
+
+export interface PlayerAnswer {
+  questionId: number;
+  answer: number;
+  correct: boolean;
+  timeMs: number;
+}
+
 export interface GameRoom {
   id: string;
   gameType: GameType;
-  players: { id: string; username: string; socketId: string; score: number; ready: boolean }[];
+  players: { id: string; username: string; socketId: string; score: number; ready: boolean; finished: boolean; answers: PlayerAnswer[] }[];
   status: 'waiting' | 'playing' | 'finished';
   currentRound: number;
   maxRounds: number;
   createdAt: Date;
   inviteCode?: string;
+  settings: GameSettings;
+  questions: Question[];
 }
 
 @Injectable()
@@ -26,16 +48,31 @@ export class MultiplayerService {
     return Math.random().toString(36).substr(2, 6).toUpperCase();
   }
 
-  createRoom(gameType: GameType, player: { userId: string; username: string; socketId: string }, isPrivate: boolean = false): GameRoom {
+  createRoom(
+    gameType: GameType,
+    player: { userId: string; username: string; socketId: string },
+    isPrivate: boolean = false,
+    settings: GameSettings = { questionCount: 5, timePerQuestion: 15 }
+  ): GameRoom {
     const roomId = this.generateRoomId();
     const room: GameRoom = {
       id: roomId,
       gameType,
-      players: [{ id: player.userId, username: player.username, socketId: player.socketId, score: 0, ready: false }],
+      players: [{
+        id: player.userId,
+        username: player.username,
+        socketId: player.socketId,
+        score: 0,
+        ready: false,
+        finished: false,
+        answers: []
+      }],
       status: 'waiting',
       currentRound: 0,
-      maxRounds: 5,
+      maxRounds: settings.questionCount,
       createdAt: new Date(),
+      settings,
+      questions: [],
     };
 
     if (isPrivate) {
@@ -61,7 +98,15 @@ export class MultiplayerService {
       return null;
     }
 
-    room.players.push({ id: player.userId, username: player.username, socketId: player.socketId, score: 0, ready: false });
+    room.players.push({
+      id: player.userId,
+      username: player.username,
+      socketId: player.socketId,
+      score: 0,
+      ready: false,
+      finished: false,
+      answers: []
+    });
     return room;
   }
 
@@ -112,13 +157,39 @@ export class MultiplayerService {
     return room;
   }
 
-  getWinner(roomId: string): { id: string; username: string; score: number } | null {
+  getWinner(roomId: string): { id: string; username: string; score: number; totalTime?: number } | null {
     const room = this.rooms.get(roomId);
-    if (!room) return null;
+    if (!room || room.players.length < 2) return null;
 
-    return room.players.reduce((winner, player) =>
-      player.score > (winner?.score || 0) ? player : winner
-    , room.players[0]);
+    // Calculate total time for each player
+    const playersWithTime = room.players.map(p => ({
+      ...p,
+      totalTime: p.answers.reduce((sum, a) => sum + a.timeMs, 0)
+    }));
+
+    // Sort by score (descending), then by time (ascending - faster wins)
+    playersWithTime.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score; // Higher score wins
+      }
+      return a.totalTime - b.totalTime; // Faster time wins on tie
+    });
+
+    const winner = playersWithTime[0];
+
+    // Check for exact tie (same score AND same time - very unlikely)
+    if (playersWithTime.length > 1 &&
+        playersWithTime[0].score === playersWithTime[1].score &&
+        playersWithTime[0].totalTime === playersWithTime[1].totalTime) {
+      return null; // True tie
+    }
+
+    return {
+      id: winner.id,
+      username: winner.username,
+      score: winner.score,
+      totalTime: winner.totalTime
+    };
   }
 
   removeRoom(roomId: string): void {
@@ -171,5 +242,68 @@ export class MultiplayerService {
 
   getRoom(roomId: string): GameRoom | undefined {
     return this.rooms.get(roomId);
+  }
+
+  // Generate synchronized questions for the room
+  generateQuestions(roomId: string): Question[] {
+    const room = this.rooms.get(roomId);
+    if (!room) return [];
+
+    const ops = ['+', '-', '*'];
+    const questions: Question[] = [];
+
+    for (let i = 0; i < room.settings.questionCount; i++) {
+      const op = ops[Math.floor(Math.random() * ops.length)];
+      let a = Math.floor(Math.random() * 20) + 1;
+      let b = Math.floor(Math.random() * 12) + 1;
+
+      // Ensure subtraction doesn't go negative
+      if (op === '-' && b > a) [a, b] = [b, a];
+
+      let answer: number;
+      switch (op) {
+        case '+': answer = a + b; break;
+        case '-': answer = a - b; break;
+        case '*': answer = a * b; break;
+        default: answer = a + b;
+      }
+
+      questions.push({ id: i, a, b, op, answer });
+    }
+
+    room.questions = questions;
+    return questions;
+  }
+
+  // Mark player as finished and record their answers
+  finishPlayerGame(roomId: string, socketId: string, answers: PlayerAnswer[]): GameRoom | null {
+    const room = this.rooms.get(roomId);
+    if (!room) return null;
+
+    const player = room.players.find(p => p.socketId === socketId);
+    if (player) {
+      player.finished = true;
+      player.answers = answers;
+      player.score = answers.filter(a => a.correct).length * 10;
+    }
+
+    return room;
+  }
+
+  // Check if all players have finished
+  areAllPlayersFinished(roomId: string): boolean {
+    const room = this.rooms.get(roomId);
+    if (!room || room.players.length < 2) return false;
+    return room.players.every(p => p.finished);
+  }
+
+  // Update room settings (before game starts)
+  updateRoomSettings(roomId: string, settings: Partial<GameSettings>): GameRoom | null {
+    const room = this.rooms.get(roomId);
+    if (!room || room.status !== 'waiting') return null;
+
+    room.settings = { ...room.settings, ...settings };
+    room.maxRounds = room.settings.questionCount;
+    return room;
   }
 }

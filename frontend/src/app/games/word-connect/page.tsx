@@ -40,19 +40,24 @@ export default function WordConnectPage() {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (user) {
+      // Load progress
+      if (user.progress?.[GameType.WORD_CONNECT]) {
+        setCurrentLevel(Math.min(user.progress[GameType.WORD_CONNECT], LEVELS.length - 1));
+      }
+
+      api.getBestScore(GameType.WORD_CONNECT)
+        .then(({ bestScore }) => setBestScore(bestScore))
+        .catch(console.error);
+    }
+  }, [user]);
+
   const level = LEVELS[currentLevel];
   const letters = level.letters;
   const centerX = 120;
   const centerY = 120;
   const radius = 80;
-
-  useEffect(() => {
-    if (user) {
-      api.getBestScore(GameType.WORD_CHAIN) // Using WORD_CHAIN as placeholder
-        .then(({ bestScore }) => setBestScore(bestScore))
-        .catch(console.error);
-    }
-  }, [user]);
 
   const getLetterPosition = (index: number) => {
     const angle = (index * (360 / letters.length) - 90) * (Math.PI / 180);
@@ -98,6 +103,17 @@ export default function WordConnectPage() {
       // Check if level complete
       if (foundWords.length + 1 >= level.words.length) {
         setTimeout(() => {
+          const finishedLevel = currentLevel + 1;
+          const levelScore = score + wordScore;
+
+          if (user) {
+            api.submitScore({
+              gameType: GameType.WORD_CONNECT,
+              score: levelScore,
+              level: finishedLevel,
+            }).catch(console.error);
+          }
+
           if (currentLevel < LEVELS.length - 1) {
             toast.success('Level Complete! 🎉');
             setCurrentLevel(l => l + 1);
@@ -105,18 +121,12 @@ export default function WordConnectPage() {
             setShowHint(false);
           } else {
             // Game complete
-            const finalScore = score + wordScore + 100;
+            const finalScore = levelScore + 100;
             toast.success(`All levels complete! Final score: ${finalScore}`);
             if (user) {
-              api.submitScore({
-                gameType: GameType.WORD_CHAIN,
-                score: finalScore,
-                level: currentLevel + 1,
-              }).then(() => {
-                if (!bestScore || finalScore > bestScore) {
-                  setBestScore(finalScore);
-                }
-              }).catch(console.error);
+              if (!bestScore || finalScore > bestScore) {
+                setBestScore(finalScore);
+              }
             }
           }
         }, 500);

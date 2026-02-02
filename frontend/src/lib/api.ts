@@ -191,6 +191,31 @@ class ApiClient {
     const query = limit ? `?limit=${limit}` : '';
     return this.request<GameScore[]>(`/leaderboard/game/${gameType}${query}`);
   }
+
+  // Game Levels
+  async getGameLevels(gameType: GameType, difficulty?: string, limit?: number): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (difficulty) params.append('difficulty', difficulty);
+    if (limit) params.append('limit', limit.toString());
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<any[]>(`/games/levels/${gameType}${query}`);
+  }
+
+  async getRandomLevels(gameType: GameType, count: number = 10, difficulty?: string): Promise<any[]> {
+    const params = new URLSearchParams();
+    params.append('count', count.toString());
+    if (difficulty) params.append('difficulty', difficulty);
+    return this.request<any[]>(`/games/levels/${gameType}/random?${params.toString()}`);
+  }
+
+  async getDailyWord(date?: string): Promise<any> {
+    const query = date ? `?date=${date}` : '';
+    return this.request<any>(`/games/levels/daily-word/today${query}`);
+  }
+
+  async getLevelCounts(): Promise<Record<string, number>> {
+    return this.request<Record<string, number>>('/games/levels/stats/counts');
+  }
 }
 
 export const api = new ApiClient();

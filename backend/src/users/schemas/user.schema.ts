@@ -44,11 +44,17 @@ export class User {
     multiplayerGames: number;
   };
 
+  @Prop({ type: Map, of: Number, default: {} })
+  progress: Map<string, number>;
+
   @Prop({ type: [String], default: [] })
   friends: string[];
 
   @Prop({ default: false })
   isOnline: boolean;
+
+  @Prop({ default: 'user', enum: ['user', 'admin'] })
+  role: 'user' | 'admin';
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

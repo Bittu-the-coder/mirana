@@ -65,13 +65,18 @@ export default function SlidingPuzzlePage() {
   const [bestScore, setBestScore] = useState<number | null>(null);
 
   useEffect(() => {
+    // Load progress
+    if (user?.progress?.[GameType.SLIDING_PUZZLE]) {
+      setGridSize(user.progress[GameType.SLIDING_PUZZLE] as GridSize);
+    }
+
     setTiles(createSolvedPuzzle(gridSize));
     if (user) {
       api.getBestScore(GameType.SLIDING_PUZZLE)
         .then(({ bestScore }) => setBestScore(bestScore))
         .catch(console.error);
     }
-  }, [user, gridSize]);
+  }, [user]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
