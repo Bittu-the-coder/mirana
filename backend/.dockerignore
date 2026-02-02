@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.git
+npm-debug.log
+pnpm-debug.log
+yarn-debug.log
+jest.config.js
+test
+README.md
+Dockerfile
+.dockerignore

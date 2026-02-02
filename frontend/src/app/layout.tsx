@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     description: "The ultimate community for brain game enthusiasts. Play, solve, and compete!",
     type: "website",
     locale: "en_US",
-    url: "https://mirana-games.vercel.app", // Adjust if user provides a final domain
+    url: "https://mirana.bittuthecoder.me",
     siteName: "Mirana",
   },
   twitter: {

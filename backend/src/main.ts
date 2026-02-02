@@ -8,6 +8,7 @@ async function bootstrap() {
   const allowedOrigins = [
     process.env.FRONTEND_URL,
     'https://mirana-games.vercel.app',
+    'https://mirana.bittuthecoder.me',
     'http://localhost:3000'
   ].filter(Boolean);
 

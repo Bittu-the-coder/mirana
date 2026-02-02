@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://mirana-games.vercel.app/</loc>
+    <loc>https://mirana.bittuthecoder.me/</loc>
     <lastmod>2025-02-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://mirana-games.vercel.app/games</loc>
+    <loc>https://mirana.bittuthecoder.me/games</loc>
     <lastmod>2025-02-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mirana-games.vercel.app/multiplayer</loc>
+    <loc>https://mirana.bittuthecoder.me/multiplayer</loc>
     <lastmod>2025-02-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://mirana-games.vercel.app/puzzles</loc>
+    <loc>https://mirana.bittuthecoder.me/puzzles</loc>
     <lastmod>2025-02-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://mirana-games.vercel.app/leaderboard</loc>
+    <loc>https://mirana.bittuthecoder.me/leaderboard</loc>
     <lastmod>2025-02-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>

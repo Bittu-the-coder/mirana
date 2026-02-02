@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mirana-games.vercel.app/sitemap.xml
+Sitemap: https://mirana.bittuthecoder.me/sitemap.xml
