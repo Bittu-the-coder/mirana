@@ -190,11 +190,11 @@ function generatePatternLevels() {
 
   // Arithmetic sequences (50 levels)
   for (let i = 0; i < 50; i++) {
-    const start = Math.floor(Math.random() * 20) + 1;
-    const diff = Math.floor(Math.random() * 10) + 1;
+    const start = Math.floor(Math.random() * 50) + 1;
+    const diff = Math.floor(Math.random() * 20) + 5;
     const sequence = Array.from({ length: 4 }, (_, j) => start + diff * j);
     const answer = start + diff * 4;
-    const options = [answer, answer + 1, answer - 1, answer + diff].sort(() => Math.random() - 0.5);
+    const options = [answer, answer + Math.floor(diff/2), answer - Math.floor(diff/2), answer + diff].sort(() => Math.random() - 0.5);
 
     levels.push({
       gameType: GameType.PATTERN_SPOTTER,
@@ -333,31 +333,31 @@ export const riddleArenaLevels = [
 // SPEED MATH CONFIGURATIONS (for multiplayer)
 // ==========================================
 export const speedMathConfigs = [
-  // Easy: Single digit addition/subtraction
-  ...Array.from({ length: 10 }, (_, i) => ({
+  // Easy: Single/Double digit addition/subtraction
+  ...Array.from({ length: 15 }, (_, i) => ({
     gameType: GameType.SPEED_MATH_DUEL,
     level: i + 1,
     difficulty: Difficulty.EASY,
-    minA: 1, maxA: 10,
-    minB: 1, maxB: 10,
+    minA: 10, maxA: 30,
+    minB: 10, maxB: 30,
     operations: ['+', '-'],
   })),
   // Medium: Double digit, includes multiplication
-  ...Array.from({ length: 10 }, (_, i) => ({
+  ...Array.from({ length: 15 }, (_, i) => ({
     gameType: GameType.SPEED_MATH_DUEL,
-    level: i + 11,
+    level: i + 16,
     difficulty: Difficulty.MEDIUM,
-    minA: 10, maxA: 50,
-    minB: 1, maxB: 20,
+    minA: 30, maxA: 100,
+    minB: 5, maxB: 25,
     operations: ['+', '-', '*'],
   })),
-  // Hard: Larger numbers
-  ...Array.from({ length: 10 }, (_, i) => ({
+  // Hard: Larger numbers, complex multiplication
+  ...Array.from({ length: 20 }, (_, i) => ({
     gameType: GameType.SPEED_MATH_DUEL,
-    level: i + 21,
+    level: i + 31,
     difficulty: Difficulty.HARD,
-    minA: 20, maxA: 100,
-    minB: 1, maxB: 30,
+    minA: 50, maxA: 200,
+    minB: 10, maxB: 50,
     operations: ['+', '-', '*'],
   })),
 ];
@@ -368,37 +368,37 @@ export const speedMathConfigs = [
 const memoryIcons = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍒', '🥝', '🍑', '🍌', '🥭', '🍍', '🥥', '🍆', '🥕', '🌽', '🥦', '🧄', '🧅', '🥔', '🍠', '🌶️', '🥒', '🥬', '🥑', '🍅', '🫑', '🫒', '🫐', '🫛', '🫚'];
 
 export const memoryMatchConfigs = [
-  // Easy: 4 pairs (8 cards)
+  // Easy: 6 pairs (12 cards)
   ...Array.from({ length: 15 }, (_, i) => ({
     gameType: GameType.MEMORY_MATCH_BATTLE,
     level: i + 1,
     difficulty: Difficulty.EASY,
-    pairs: 4,
-    icons: memoryIcons.slice(0, 4),
+    pairs: 6,
+    icons: memoryIcons.slice(0, 6),
   })),
-  // Medium: 6 pairs (12 cards)
+  // Medium: 8 pairs (16 cards)
   ...Array.from({ length: 15 }, (_, i) => ({
     gameType: GameType.MEMORY_MATCH_BATTLE,
     level: i + 16,
     difficulty: Difficulty.MEDIUM,
-    pairs: 6,
-    icons: memoryIcons.slice(0, 6),
+    pairs: 8,
+    icons: memoryIcons.slice(0, 8),
   })),
-  // Hard: 8 pairs (16 cards)
+  // Hard: 12 pairs (24 cards)
   ...Array.from({ length: 15 }, (_, i) => ({
     gameType: GameType.MEMORY_MATCH_BATTLE,
     level: i + 31,
     difficulty: Difficulty.HARD,
-    pairs: 8,
-    icons: memoryIcons.slice(0, 8),
+    pairs: 12,
+    icons: memoryIcons.slice(0, 12),
   })),
-  // Expert: 10 pairs (20 cards)
+  // Expert: 15 pairs (30 cards)
   ...Array.from({ length: 5 }, (_, i) => ({
     gameType: GameType.MEMORY_MATCH_BATTLE,
     level: i + 46,
     difficulty: Difficulty.EXPERT,
-    pairs: 10,
-    icons: memoryIcons.slice(0, 10),
+    pairs: 15,
+    icons: memoryIcons.slice(0, 15),
   })),
 ];
 
@@ -406,28 +406,28 @@ export const memoryMatchConfigs = [
 // MEMORY PATH CONFIGS
 // ==========================================
 export const memoryPathConfigs = [
-  // Easy: 3-4 cells
+  // Easy: 4-5 cells
   ...Array.from({ length: 20 }, (_, i) => ({
     gameType: GameType.MEMORY_PATH,
     level: i + 1,
     difficulty: Difficulty.EASY,
-    pathLength: 3 + Math.floor(i / 10),
+    pathLength: 4 + Math.floor(i / 10),
     gridSize: 4,
   })),
-  // Medium: 5-6 cells
+  // Medium: 6-8 cells
   ...Array.from({ length: 20 }, (_, i) => ({
     gameType: GameType.MEMORY_PATH,
     level: i + 21,
     difficulty: Difficulty.MEDIUM,
-    pathLength: 5 + Math.floor(i / 10),
+    pathLength: 6 + Math.floor(i / 7),
     gridSize: 5,
   })),
-  // Hard: 7-8 cells
+  // Hard: 9-12 cells
   ...Array.from({ length: 10 }, (_, i) => ({
     gameType: GameType.MEMORY_PATH,
     level: i + 41,
     difficulty: Difficulty.HARD,
-    pathLength: 7 + Math.floor(i / 5),
+    pathLength: 9 + Math.floor(i / 3),
     gridSize: 6,
   })),
 ];
@@ -436,29 +436,29 @@ export const memoryPathConfigs = [
 // COLOR MEMORY CONFIGS
 // ==========================================
 export const colorMemoryConfigs = [
-  // Easy: 4 colors, short sequences
+  // Easy: 4 colors, longer sequences
   ...Array.from({ length: 20 }, (_, i) => ({
     gameType: GameType.COLOR_MEMORY,
     level: i + 1,
     difficulty: Difficulty.EASY,
     colorCount: 4,
-    initialLength: 2 + Math.floor(i / 5),
+    initialLength: 3 + Math.floor(i / 4),
   })),
-  // Medium: 5 colors
+  // Medium: 5-6 colors
   ...Array.from({ length: 20 }, (_, i) => ({
     gameType: GameType.COLOR_MEMORY,
     level: i + 21,
     difficulty: Difficulty.MEDIUM,
-    colorCount: 5,
-    initialLength: 3 + Math.floor(i / 5),
+    colorCount: 5 + Math.floor(Math.random() * 2),
+    initialLength: 5 + Math.floor(i / 4),
   })),
-  // Hard: 6 colors
+  // Hard: 8 colors, complex sequences
   ...Array.from({ length: 10 }, (_, i) => ({
     gameType: GameType.COLOR_MEMORY,
     level: i + 41,
     difficulty: Difficulty.HARD,
-    colorCount: 6,
-    initialLength: 4 + Math.floor(i / 5),
+    colorCount: 8,
+    initialLength: 7 + Math.floor(i / 3),
   })),
 ];
 
@@ -466,13 +466,13 @@ export const colorMemoryConfigs = [
 // NUMBER PYRAMID CONFIGS
 // ==========================================
 export const numberPyramidConfigs = [
-  // Easy: 4 rows
+  // Easy: 4 rows, higher numbers
   ...Array.from({ length: 20 }, (_, i) => ({
     gameType: GameType.NUMBER_PYRAMID,
     level: i + 1,
     difficulty: Difficulty.EASY,
     rows: 4,
-    maxBaseNumber: 5 + Math.floor(i / 4),
+    maxBaseNumber: 8 + Math.floor(i / 3),
   })),
   // Medium: 5 rows
   ...Array.from({ length: 20 }, (_, i) => ({
@@ -480,7 +480,7 @@ export const numberPyramidConfigs = [
     level: i + 21,
     difficulty: Difficulty.MEDIUM,
     rows: 5,
-    maxBaseNumber: 6 + Math.floor(i / 4),
+    maxBaseNumber: 10 + Math.floor(i / 3),
   })),
   // Hard: 6 rows
   ...Array.from({ length: 10 }, (_, i) => ({
@@ -488,7 +488,7 @@ export const numberPyramidConfigs = [
     level: i + 41,
     difficulty: Difficulty.HARD,
     rows: 6,
-    maxBaseNumber: 7 + Math.floor(i / 4),
+    maxBaseNumber: 12 + Math.floor(i / 3),
   })),
 ];
 
@@ -496,13 +496,13 @@ export const numberPyramidConfigs = [
 // SLIDING PUZZLE CONFIGS
 // ==========================================
 export const slidingPuzzleConfigs = [
-  // Easy: 3x3
+  // Easy: 3x3, more chaos
   ...Array.from({ length: 10 }, (_, i) => ({
     gameType: GameType.SLIDING_PUZZLE,
     level: i + 1,
     difficulty: Difficulty.EASY,
     gridSize: 3,
-    shuffleMoves: 50 + i * 10,
+    shuffleMoves: 100 + i * 20,
   })),
   // Medium: 4x4
   ...Array.from({ length: 10 }, (_, i) => ({
@@ -510,7 +510,7 @@ export const slidingPuzzleConfigs = [
     level: i + 11,
     difficulty: Difficulty.MEDIUM,
     gridSize: 4,
-    shuffleMoves: 100 + i * 15,
+    shuffleMoves: 200 + i * 30,
   })),
   // Hard: 5x5
   ...Array.from({ length: 10 }, (_, i) => ({
@@ -518,7 +518,7 @@ export const slidingPuzzleConfigs = [
     level: i + 21,
     difficulty: Difficulty.HARD,
     gridSize: 5,
-    shuffleMoves: 150 + i * 20,
+    shuffleMoves: 400 + i * 50,
   })),
 ];
 

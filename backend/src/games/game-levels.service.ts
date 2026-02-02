@@ -67,6 +67,10 @@ export class GameLevelsService {
     return this.gameLevelModel.deleteMany({ gameType }).exec();
   }
 
+  async deleteAllLevels(): Promise<{ deletedCount?: number }> {
+    return this.gameLevelModel.deleteMany({}).exec();
+  }
+
   async getLevelCount(gameType: GameType): Promise<number> {
     return this.gameLevelModel.countDocuments({ gameType, isActive: true }).exec();
   }

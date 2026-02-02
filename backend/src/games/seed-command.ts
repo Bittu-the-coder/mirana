@@ -12,7 +12,8 @@ async function bootstrap() {
 
   try {
     // Clear existing levels
-    console.log('🧹 Clearing existing levels...');
+    console.log('🧹 Clearing all existing levels...');
+    await gameLevelsService.deleteAllLevels();
 
     const result = await gameLevelsService.createManyLevels(allGameLevels);
 
