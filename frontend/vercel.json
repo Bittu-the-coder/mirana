@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "framework": "nextjs",
   "cleanUrls": true,
-  "framework": "nextjs"
+  "trailingSlash": false,
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install"
 }
