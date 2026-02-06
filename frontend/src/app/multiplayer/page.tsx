@@ -28,7 +28,7 @@ import {
   Zap
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const multiplayerGames = [
@@ -140,6 +140,7 @@ function SpeedMathGame({
   const [timeLeft, setTimeLeft] = useState(settings.timePerQuestion);
   const [startTime, setStartTime] = useState(Date.now());
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const currentQuestion = questions[currentIndex];
 
@@ -148,6 +149,8 @@ function SpeedMathGame({
     setTimeLeft(settings.timePerQuestion);
     setUserAnswer('');
     setFeedback(null);
+    // Refocus input on new question
+    setTimeout(() => inputRef.current?.focus(), 50);
   }, [currentIndex, settings.timePerQuestion]);
 
   useEffect(() => {
@@ -216,6 +219,7 @@ function SpeedMathGame({
 
       <form onSubmit={handleFormSubmit} className="space-y-4">
         <Input
+          ref={inputRef}
           type="number"
           value={userAnswer}
           onChange={(e) => setUserAnswer(e.target.value)}

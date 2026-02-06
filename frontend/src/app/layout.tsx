@@ -162,7 +162,7 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   other: {
-    "google-site-verification": "your-google-verification-code",
+    "google-site-verification": "google-verification-code",
   },
 };
 

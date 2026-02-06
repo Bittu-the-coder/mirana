@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/auth-context';
 import { ArrowLeft, Calculator, CheckCircle, Clock, Trophy, XCircle, Zap } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Challenge {
@@ -41,6 +41,7 @@ export default function MultiplicationSprintPage() {
   const [questionsAnswered, setQuestionsAnswered] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Load saved level
   useEffect(() => {
@@ -124,6 +125,8 @@ export default function MultiplicationSprintPage() {
     // Generate new challenge with fresh numbers
     setChallenge(generateChallenge(level));
     setUserAnswer('');
+    // Refocus input after submission
+    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const skipQuestion = () => {
@@ -227,6 +230,7 @@ export default function MultiplicationSprintPage() {
                 {/* Answer Input */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <Input
+                    ref={inputRef}
                     type="number"
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}

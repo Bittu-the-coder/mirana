@@ -2,32 +2,92 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://mirana.bittuthecoder.me/</loc>
-    <lastmod>2025-02-02</lastmod>
+    <lastmod>2026-02-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://mirana.bittuthecoder.me/games</loc>
-    <lastmod>2025-02-02</lastmod>
+    <lastmod>2026-02-06</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://mirana.bittuthecoder.me/multiplayer</loc>
-    <lastmod>2025-02-02</lastmod>
+    <lastmod>2026-02-06</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://mirana.bittuthecoder.me/puzzles</loc>
-    <lastmod>2025-02-02</lastmod>
+    <lastmod>2026-02-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://mirana.bittuthecoder.me/leaderboard</loc>
-    <lastmod>2025-02-02</lastmod>
+    <lastmod>2026-02-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://mirana.bittuthecoder.me/community</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://mirana.bittuthecoder.me/games/word-connect</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mirana.bittuthecoder.me/games/sliding-puzzle</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mirana.bittuthecoder.me/games/daily-mystery-word</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mirana.bittuthecoder.me/games/number-pyramid</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mirana.bittuthecoder.me/games/memory-path</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mirana.bittuthecoder.me/games/pattern-spotter</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mirana.bittuthecoder.me/games/color-memory</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mirana.bittuthecoder.me/games/mental-math</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://mirana.bittuthecoder.me/games/multiplication-sprint</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
 </urlset>

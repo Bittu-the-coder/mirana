@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { GameType } from '@/lib/types';
 import { Brain, Timer, Trophy } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 export default function MentalMathPage() {
@@ -20,6 +20,7 @@ export default function MentalMathPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [question, setQuestion] = useState<{ text: string; answer: number } | null>(null);
   const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -110,6 +111,8 @@ export default function MentalMathPage() {
       // Penalty?
        setScore(s => Math.max(0, s - 5));
     }
+    // Refocus input after each submission
+    inputRef.current?.focus();
   };
 
   return (
@@ -176,6 +179,7 @@ export default function MentalMathPage() {
 
                     <form onSubmit={handleSubmit} className="flex gap-2">
                         <input
+                           ref={inputRef}
                            type="number"
                            autoFocus
                            className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-lg ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
