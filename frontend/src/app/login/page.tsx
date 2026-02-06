@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, refreshUser } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,6 +23,8 @@ export default function LoginPage() {
 
     try {
       await login(username, password);
+      // Force refresh user data to ensure all state is up to date before redirect
+      await refreshUser();
       toast.success('Welcome back!');
       router.push('/');
     } catch (error: unknown) {

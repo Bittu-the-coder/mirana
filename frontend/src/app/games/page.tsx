@@ -5,16 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth-context';
 import {
-  Eye,
-  Grid3X3,
-  Hash,
-  Palette,
-  Play,
-  Puzzle,
-  Route,
-  Scale,
-  Sparkles,
-  Type
+    Eye,
+    Grid3X3,
+    Hash,
+    Palette,
+    Play,
+    Puzzle,
+    Route,
+    Scale,
+    Sparkles,
+    Type
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -102,6 +102,15 @@ const games = [
     category: 'Logic',
     color: 'text-orange-500',
     isUpcoming: true,
+  },
+  {
+    id: 'mental-math',
+    name: 'Mental Math',
+    description: 'Solve arithmetic problems against the clock',
+    icon: Hash,
+    difficulty: 'Medium',
+    category: 'Math',
+    color: 'text-blue-500',
   },
 ];
 

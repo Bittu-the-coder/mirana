@@ -1,5 +1,7 @@
 'use client';
 
+import { GameGuideDialog } from '@/components/game-guide-dialog';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -136,6 +138,15 @@ export default function PatternSpotterPage() {
                     {bestScore}
                   </Badge>
                 )}
+                <GameGuideDialog
+                  title="Pattern Spotter"
+                  description="Find the next number in the sequence."
+                  rules={[
+                    "Identify the pattern.",
+                    "Select the correct next number.",
+                    "Complete as many as you can.",
+                  ]}
+                />
               </div>
             </div>
           </CardHeader>

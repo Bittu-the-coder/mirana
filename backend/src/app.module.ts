@@ -1,8 +1,10 @@
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { CommentsModule } from './comments/comments.module';
+import { ApiKeyGuard } from './common/guards/api-key.guard';
 import { GamesModule } from './games/games.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { MultiplayerModule } from './multiplayer/multiplayer.module';
@@ -53,6 +55,12 @@ import { UsersModule } from './users/users.module';
     LeaderboardModule,
     MultiplayerModule,
     UploadModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ApiKeyGuard,
+    },
   ],
 })
 export class AppModule {}

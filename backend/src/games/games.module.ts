@@ -8,6 +8,8 @@ import { GamesService } from './games.service';
 import { GameLevel, GameLevelSchema } from './schemas/game-level.schema';
 import { GameScore, GameScoreSchema } from './schemas/game-score.schema';
 
+import { SeedingService } from './seeding.service';
+
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -17,7 +19,7 @@ import { GameScore, GameScoreSchema } from './schemas/game-score.schema';
     UsersModule,
   ],
   controllers: [GamesController, GameLevelsController],
-  providers: [GamesService, GameLevelsService],
+  providers: [GamesService, GameLevelsService, SeedingService],
   exports: [GamesService, GameLevelsService],
 })
 export class GamesModule {}

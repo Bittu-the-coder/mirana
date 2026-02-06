@@ -1,5 +1,7 @@
 'use client';
 
+import { GameGuideDialog } from '@/components/game-guide-dialog';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -182,6 +184,14 @@ export default function SlidingPuzzlePage() {
               <Badge variant={gridSize === 4 ? 'default' : gridSize === 5 ? 'secondary' : 'destructive'}>
                 {getDifficultyLabel()}
               </Badge>
+              <GameGuideDialog
+                  title="Sliding Puzzle"
+                  description="Order the tiles."
+                  rules={[
+                    "Slide tiles into the empty space.",
+                    "Arrange numbers in ascending order.",
+                  ]}
+                />
             </div>
           </CardHeader>
           <CardContent className="space-y-6">

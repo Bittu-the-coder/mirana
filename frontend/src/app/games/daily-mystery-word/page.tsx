@@ -1,5 +1,6 @@
 'use client';
 
+import { GameGuideDialog } from '@/components/game-guide-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,7 @@ import { GameType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Calendar, RotateCcw, Trophy } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+
 import { toast } from 'sonner';
 
 const WORDS = [
@@ -174,12 +176,29 @@ export default function DailyMysteryWordPage() {
                 <Calendar className="h-6 w-6 text-primary" />
                 Daily Mystery Word
               </CardTitle>
-              {bestScore && (
-                <Badge variant="secondary">
-                  <Trophy className="h-3 w-3 mr-1 text-amber-500" />
-                  {bestScore}
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {bestScore && (
+                  <Badge variant="secondary">
+                    <Trophy className="h-3 w-3 mr-1 text-amber-500" />
+                    {bestScore}
+                  </Badge>
+                )}
+                <GameGuideDialog
+                  title="Daily Mystery Word"
+                  description="Guess the hidden word in 6 tries."
+                  rules={[
+                    "Each guess must be a valid 5-letter word.",
+                    "The color of the tiles will change to show how close your guess was to the word.",
+                    "Green indicates the letter is in the correct spot.",
+                    "Yellow indicates the letter is in the word but in the wrong spot.",
+                    "Gray indicates the letter is not in the word in any spot.",
+                  ]}
+                  scoring={[
+                    "100 points base score",
+                    "100 bonus points for each remaining attempt",
+                  ]}
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -246,8 +265,8 @@ export default function DailyMysteryWordPage() {
                         onClick={() => handleKeyPress(key)}
                         disabled={gameOver}
                         className={cn(
-                          'h-12 font-semibold',
-                          isSpecial ? 'px-2 text-xs' : 'w-8 sm:w-10',
+                          'h-12 font-semibold px-0',
+                          isSpecial ? 'flex-[1.5] text-xs' : 'flex-1',
                           letterState === 'correct' && 'bg-green-500 text-white border-green-500 hover:bg-green-600',
                           letterState === 'present' && 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600',
                           letterState === 'absent' && 'bg-muted text-muted-foreground opacity-50'

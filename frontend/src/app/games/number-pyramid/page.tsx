@@ -1,5 +1,7 @@
 'use client';
 
+import { GameGuideDialog } from '@/components/game-guide-dialog';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -151,6 +153,14 @@ export default function NumberPyramidPage() {
                   {bestScore}
                 </Badge>
               )}
+              <GameGuideDialog
+                  title="Number Pyramid"
+                  description="Fill in the missing numbers."
+                  rules={[
+                    "Each block is the sum of the two blocks below it.",
+                    "Fill in all independent blocks.",
+                  ]}
+                />
             </div>
           </CardHeader>
           <CardContent className="space-y-6">

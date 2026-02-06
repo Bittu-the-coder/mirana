@@ -1,5 +1,7 @@
 'use client';
 
+import { GameGuideDialog } from '@/components/game-guide-dialog';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +46,8 @@ export default function WordConnectPage() {
     if (user) {
       // Load progress
       if (user.progress?.[GameType.WORD_CONNECT]) {
-        setCurrentLevel(Math.min(user.progress[GameType.WORD_CONNECT], LEVELS.length - 1));
+        const savedLevel = user.progress[GameType.WORD_CONNECT];
+        setCurrentLevel(current => Math.max(current, Math.min(savedLevel, LEVELS.length - 1)));
       }
 
       api.getBestScore(GameType.WORD_CONNECT)
@@ -163,7 +166,7 @@ export default function WordConnectPage() {
                 <Sparkles className="h-6 w-6 text-primary" />
                 Word Connect
               </CardTitle>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Badge variant="secondary">Level {currentLevel + 1}</Badge>
                 {bestScore !== null && (
                   <Badge variant="outline">
@@ -171,6 +174,20 @@ export default function WordConnectPage() {
                     {bestScore}
                   </Badge>
                 )}
+                <GameGuideDialog
+                  title="Word Connect"
+                  description="Connect letters to form words and complete the level."
+                  rules={[
+                    "Swipe to connect letters in the circle to form words.",
+                    "Find all hidden words to complete the level.",
+                    "Words can be formed in any order.",
+                    "Find extra words for bonus points!",
+                  ]}
+                  controls={[
+                    "Click/Touch and drag to connect letters.",
+                    "Release to submit the word.",
+                  ]}
+                />
               </div>
             </div>
           </CardHeader>
@@ -213,11 +230,35 @@ export default function WordConnectPage() {
             {/* Letter Circle */}
             <div
               ref={containerRef}
-              className="relative mx-auto"
+              className="relative mx-auto touch-none"
               style={{ width: 240, height: 240 }}
               onMouseUp={handleDragEnd}
               onMouseLeave={handleDragEnd}
-              onTouchEnd={handleDragEnd}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                handleDragEnd();
+              }}
+              onTouchMove={(e) => {
+                e.preventDefault();
+                if (!isDragging || !containerRef.current) return;
+
+                const touch = e.touches[0];
+                const rect = containerRef.current.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+
+                // Check distance to each letter center
+                letters.forEach((_, index) => {
+                  const pos = getLetterPosition(index);
+                  // Letter button radius approx 28px (w-14 = 3.5rem = 56px => r=28)
+                  // Give a bit more hit area (40px radius)
+                  const dist = Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2));
+
+                  if (dist < 40) {
+                    handleLetterEnter(index);
+                  }
+                });
+              }}
             >
               {/* SVG for connection lines */}
               <svg className="absolute inset-0 pointer-events-none" width="240" height="240">
@@ -240,8 +281,9 @@ export default function WordConnectPage() {
                 return (
                   <button
                     key={index}
+                    data-index={index}
                     className={cn(
-                      'absolute w-14 h-14 rounded-full font-bold text-xl transition-all -translate-x-1/2 -translate-y-1/2',
+                      'absolute w-14 h-14 rounded-full font-bold text-xl transition-all -translate-x-1/2 -translate-y-1/2 touch-none select-none',
                       isSelected
                         ? 'bg-primary text-primary-foreground scale-110'
                         : 'bg-muted hover:bg-muted-foreground/20'
@@ -249,7 +291,10 @@ export default function WordConnectPage() {
                     style={{ left: pos.x, top: pos.y }}
                     onMouseDown={() => handleLetterStart(index)}
                     onMouseEnter={() => handleLetterEnter(index)}
-                    onTouchStart={() => handleLetterStart(index)}
+                    onTouchStart={(e) => {
+                      e.preventDefault(); // Prevent scrolling
+                      handleLetterStart(index);
+                    }}
                   >
                     {letter}
                   </button>

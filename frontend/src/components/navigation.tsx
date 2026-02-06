@@ -9,15 +9,17 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/lib/auth-context';
 import { cn } from '@/lib/utils';
 import {
     Gamepad2,
+    Github,
     Home,
     LogOut,
     Menu,
     Puzzle,
+    Star,
     Swords,
     Trophy,
     User,
@@ -87,7 +89,21 @@ export function Navigation() {
           <NavLinks />
         </nav>
 
-        <div className="border-t pt-4 mt-4">
+        <div className="border-t pt-4 mt-4 space-y-2">
+          {/* GitHub Star Button */}
+          <a
+            href="https://github.com/Bittu-the-coder/mirana"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-4 py-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            <Github className="h-5 w-5" />
+            <span className="font-medium">Star on GitHub</span>
+            <Star className="h-4 w-4 ml-auto text-amber-500" />
+          </a>
+        </div>
+
+        <div className="border-t pt-4 mt-2">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -159,6 +175,7 @@ export function Navigation() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[280px] sm:w-[320px] p-4 bg-card">
+              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
               <div className="flex items-center gap-3 mb-6 pt-2">
                 <Image src="/logo.png" alt="Mirana" width={32} height={32} className="rounded-lg" />
                 <span className="text-xl font-bold">Mirana</span>
@@ -166,7 +183,23 @@ export function Navigation() {
               <nav className="space-y-1">
                 <NavLinks mobile />
               </nav>
-              <div className="border-t pt-4 mt-6">
+
+              {/* GitHub Star Button - Mobile */}
+              <div className="border-t pt-4 mt-4">
+                <a
+                  href="https://github.com/Bittu-the-coder/mirana"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-4 py-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                  onClick={() => setOpen(false)}
+                >
+                  <Github className="h-5 w-5" />
+                  <span className="font-medium">Star on GitHub</span>
+                  <Star className="h-4 w-4 ml-auto text-amber-500" />
+                </a>
+              </div>
+
+              <div className="border-t pt-4 mt-4">
                 {user ? (
                   <div className="space-y-4">
                     <div className="flex items-center gap-3 px-4">

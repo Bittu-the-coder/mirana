@@ -1,5 +1,7 @@
 'use client';
 
+import { GameGuideDialog } from '@/components/game-guide-dialog';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -136,6 +138,15 @@ export default function MemoryPathPage() {
                     {bestScore}
                   </Badge>
                 )}
+                <GameGuideDialog
+                  title="Memory Path"
+                  description="Remember and trace the path."
+                  rules={[
+                    "Watch the path as it appears.",
+                    "Wait for it to disappear.",
+                    "Trace the exact same path.",
+                  ]}
+                />
               </div>
             </div>
           </CardHeader>

@@ -95,7 +95,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     });
 
     newSocket.on('authenticated', () => {
-      console.log('Socket authenticated');
+      // Socket authenticated successfully
     });
 
     newSocket.on('matchmaking', (data: { status: string }) => {

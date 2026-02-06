@@ -38,6 +38,7 @@ export enum GameType {
   MEMORY_MATCH_BATTLE = 'memory_match_battle',
   WORD_CHAIN = 'word_chain',
   WORD_CONNECT = 'word_connect',
+  MENTAL_MATH = 'mental_math',
 }
 
 export interface GameScore {

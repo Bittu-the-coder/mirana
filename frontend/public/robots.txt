@@ -1,4 +1,23 @@
+# Mirana Brain Games - Robots.txt
+# https://mirana.bittuthecoder.me
+
 User-agent: *
 Allow: /
 
+# Sitemaps
 Sitemap: https://mirana.bittuthecoder.me/sitemap.xml
+
+# Disallow admin/internal paths
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/
+
+# Allow crawlers to access all game pages
+Allow: /games/
+Allow: /multiplayer/
+Allow: /puzzles/
+Allow: /leaderboard/
+Allow: /community/
+
+# Crawl-delay for politeness
+Crawl-delay: 1

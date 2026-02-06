@@ -1,5 +1,7 @@
 'use client';
 
+import { GameGuideDialog } from '@/components/game-guide-dialog';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -137,6 +139,15 @@ export default function ColorMemoryPage() {
                     {bestScore}
                   </Badge>
                 )}
+                <GameGuideDialog
+                  title="Color Memory"
+                  description="Repeat the pattern."
+                  rules={[
+                    "Watch the color sequence.",
+                    "Repeat it exactly.",
+                    "Sequence gets longer each round.",
+                  ]}
+                />
               </div>
             </div>
           </CardHeader>

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { GameType } from '../games/schemas/game-score.schema';
+import { memoryMatchConfigs, riddleArenaLevels } from '../games/seed-levels';
 
 export interface GameSettings {
   questionCount: number;
@@ -244,35 +245,61 @@ export class MultiplayerService {
     return this.rooms.get(roomId);
   }
 
+
+
   // Generate synchronized questions for the room
-  generateQuestions(roomId: string): Question[] {
+  generateQuestions(roomId: string): any[] {
     const room = this.rooms.get(roomId);
     if (!room) return [];
 
-    const ops = ['+', '-', '*'];
-    const questions: Question[] = [];
+    if (room.gameType === GameType.SPEED_MATH_DUEL) {
+      const ops = ['+', '-', '*'];
+      const questions: Question[] = [];
 
-    for (let i = 0; i < room.settings.questionCount; i++) {
-      const op = ops[Math.floor(Math.random() * ops.length)];
-      let a = Math.floor(Math.random() * 20) + 1;
-      let b = Math.floor(Math.random() * 12) + 1;
+      for (let i = 0; i < room.settings.questionCount; i++) {
+        const op = ops[Math.floor(Math.random() * ops.length)];
+        let a = Math.floor(Math.random() * 20) + 1;
+        let b = Math.floor(Math.random() * 12) + 1;
 
-      // Ensure subtraction doesn't go negative
-      if (op === '-' && b > a) [a, b] = [b, a];
+        if (op === '-' && b > a) [a, b] = [b, a];
 
-      let answer: number;
-      switch (op) {
-        case '+': answer = a + b; break;
-        case '-': answer = a - b; break;
-        case '*': answer = a * b; break;
-        default: answer = a + b;
+        let answer: number;
+        switch (op) {
+          case '+': answer = a + b; break;
+          case '-': answer = a - b; break;
+          case '*': answer = a * b; break;
+          default: answer = a + b;
+        }
+
+        questions.push({ id: i, a, b, op, answer });
       }
+      room.questions = questions;
+      return questions;
+    } else if (room.gameType === GameType.RIDDLE_ARENA) {
+        // Pick random riddles
+        const shuffled = [...riddleArenaLevels].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, room.settings.questionCount);
+        // Map to simpler format if needed, or send full object
+        // We'll send the full object but client needs to handle it.
+        // For consistency in type, we might need to adjust the Question interface or use `any` for questions
+        room.questions = selected as any;
+        return selected;
+    } else if (room.gameType === GameType.MEMORY_MATCH_BATTLE) {
+        // Generate memory board
+        // For multiplayer, we need a shared board.
+        // Level logic: use settings to determine size? Default to level 1 config for now
+        const config = memoryMatchConfigs[0]; // Simple start
+        const cards = [...config.icons, ...config.icons]
+            .sort(() => 0.5 - Math.random())
+            .map((icon, idx) => ({ id: idx, icon, matched: false }));
 
-      questions.push({ id: i, a, b, op, answer });
+        // This is a bit different as it's state, not a list of questions to answer sequentially.
+        // But for "questions" we can send the layout.
+        room.questions = cards as any;
+        return cards;
     }
 
-    room.questions = questions;
-    return questions;
+    return [];
   }
 
   // Mark player as finished and record their answers

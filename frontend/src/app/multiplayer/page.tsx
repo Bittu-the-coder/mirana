@@ -17,6 +17,7 @@ import {
   Grid3X3,
   Loader2,
   Settings,
+  Sparkles,
   Swords,
   Target,
   Trophy,
@@ -45,6 +46,14 @@ const multiplayerGames = [
     description: 'Find matching pairs before your opponent and beat them',
     icon: Grid3X3,
     color: 'bg-green-500',
+    players: '2 Players',
+  },
+  {
+    id: GameType.RIDDLE_ARENA,
+    name: 'Riddle Arena',
+    description: 'Solve riddles faster than your opponent',
+    icon: Sparkles,
+    color: 'bg-purple-500',
     players: '2 Players',
   },
 ];
@@ -113,7 +122,7 @@ function GameSettingsPanel({
   );
 }
 
-// Speed Math Game Component - Updated to use server questions
+// Speed Math Game Component
 function SpeedMathGame({
   questions,
   settings,
@@ -221,6 +230,139 @@ function SpeedMathGame({
       </form>
     </div>
   );
+}
+
+// Memory Match Game Component
+function MemoryBattleGame({
+  questions, // Reusing questions prop for cards
+  settings,
+  userId,
+  onFinish,
+}: {
+  questions: any[];
+  settings: GameSettings;
+  userId: string;
+  onFinish: (answers: any[]) => void;
+}) {
+    const [cards, setCards] = useState<any[]>(questions);
+    const [flipped, setFlipped] = useState<number[]>([]);
+    const [matched, setMatched] = useState<number[]>([]);
+    const [startTime] = useState(Date.now());
+
+    // Effect to check matches
+    useEffect(() => {
+        if (flipped.length === 2) {
+            const [first, second] = flipped;
+            if (cards[first].icon === cards[second].icon) {
+                setMatched(prev => [...prev, first, second]);
+                setFlipped([]);
+            } else {
+                const timer = setTimeout(() => setFlipped([]), 1000);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [flipped, cards]);
+
+    // Check finish condition
+    useEffect(() => {
+        if (matched.length === cards.length && cards.length > 0) {
+             const timeMs = Date.now() - startTime;
+             // Submit result
+             onFinish([{ questionId: 0, answer: 1, correct: true, timeMs }]); // Simplified result for memory
+        }
+    }, [matched, cards.length, startTime, onFinish]);
+
+    const handleCardClick = (index: number) => {
+        if (flipped.length >= 2 || flipped.includes(index) || matched.includes(index)) return;
+        setFlipped(prev => [...prev, index]);
+    };
+
+    return (
+        <div className="grid grid-cols-4 gap-4 p-4">
+            {cards.map((card, index) => (
+                <div
+                    key={index}
+                    className={cn(
+                        "aspect-square flex items-center justify-center text-4xl cursor-pointer rounded-xl transition-all duration-300 transform",
+                        flipped.includes(index) || matched.includes(index)
+                         ? "bg-primary text-white rotate-0"
+                         : "bg-muted text-transparent hover:bg-muted/80 rotate-180"
+                    )}
+                    onClick={() => handleCardClick(index)}
+                >
+                    {(flipped.includes(index) || matched.includes(index)) ? card.icon : '?'}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+// Riddle Game Component
+function RiddleGame({
+  questions,
+  settings,
+  userId,
+  onFinish,
+}: {
+  questions: any[];
+  settings: GameSettings;
+  userId: string;
+  onFinish: (answers: any[]) => void;
+}) {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [answers, setAnswers] = useState<any[]>([]);
+    const [startTime] = useState(Date.now());
+
+    // If questions are not loaded yet or invalid format
+    if (!questions || !questions.length) return <div>Loading riddles...</div>;
+
+    const currentRiddle = questions[currentIndex];
+
+    // Check if options exist
+    const options = currentRiddle.options || [];
+
+    const handleAnswer = (optionIndex: number) => {
+        const timeMs = Date.now() - startTime; // simplified time tracking relative to start, ideally per question
+        const correct = optionIndex === currentRiddle.answer;
+
+        const newAnswer = {
+            questionId: currentIndex,
+            answer: optionIndex,
+            correct,
+            timeMs,
+        };
+
+        const updatedAnswers = [...answers, newAnswer];
+        setAnswers(updatedAnswers);
+
+        if (currentIndex + 1 >= questions.length) {
+            onFinish(updatedAnswers);
+        } else {
+            setCurrentIndex(prev => prev + 1);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="text-center p-8 bg-muted/30 rounded-xl">
+                 <h3 className="text-xl font-semibold mb-4">Riddle {currentIndex + 1}/{questions.length}</h3>
+                 <p className="text-lg mb-8">{currentRiddle.question}</p>
+
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     {options.map((option: string, idx: number) => (
+                         <Button
+                            key={idx}
+                            variant="outline"
+                            className="h-auto py-4 text-left justify-start whitespace-normal"
+                            onClick={() => handleAnswer(idx)}
+                         >
+                            {option}
+                         </Button>
+                     ))}
+                 </div>
+            </div>
+        </div>
+    );
 }
 
 // Results Screen Component
@@ -492,16 +634,34 @@ export default function MultiplayerPage() {
             <CardHeader className="text-center">
               <CardTitle className="flex items-center justify-center gap-2">
                 <Zap className="h-5 w-5 text-amber-500" />
-                Speed Math Duel
+                {currentRoom.gameType.replace(/_/g, ' ')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SpeedMathGame
-                questions={gameQuestions}
-                settings={gameSettings}
-                userId={user.id}
-                onFinish={handleFinishGame}
-              />
+              {currentRoom.gameType === GameType.SPEED_MATH_DUEL ? (
+                  <SpeedMathGame
+                    questions={gameQuestions}
+                    settings={gameSettings}
+                    userId={user.id}
+                    onFinish={handleFinishGame}
+                  />
+              ) : currentRoom.gameType === GameType.RIDDLE_ARENA ? (
+                  <RiddleGame
+                    questions={gameQuestions}
+                    settings={gameSettings}
+                    userId={user.id}
+                    onFinish={handleFinishGame}
+                  />
+              ) : currentRoom.gameType === GameType.MEMORY_MATCH_BATTLE ? (
+                   <MemoryBattleGame
+                    questions={gameQuestions}
+                    settings={gameSettings}
+                    userId={user.id}
+                    onFinish={handleFinishGame}
+                  />
+              ) : (
+                  <div>Unsupported game type</div>
+              )}
             </CardContent>
           </Card>
         </div>

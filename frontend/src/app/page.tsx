@@ -2,25 +2,25 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  ArrowRight,
-  Brain,
-  Calculator,
-  Eye,
-  Gamepad2,
-  Grid3X3,
-  Hash,
-  Palette,
-  Play,
-  Puzzle,
-  Route,
-  Scale,
-  Sparkles,
-  Swords,
-  Target,
-  Trophy,
-  Type,
-  Users,
-  Zap
+    ArrowRight,
+    Brain,
+    Calculator,
+    Eye,
+    Gamepad2,
+    Grid3X3,
+    Hash,
+    Palette,
+    Play,
+    Puzzle,
+    Route,
+    Scale,
+    Sparkles,
+    Swords,
+    Target,
+    Trophy,
+    Type,
+    Users,
+    Zap
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -48,6 +48,7 @@ const features = [
 ];
 
 const soloGames = [
+  { name: 'Word Connect', difficulty: 'Medium', icon: Sparkles, href: '/games/word-connect', color: 'text-violet-500' },
   { name: 'Sliding Puzzle', difficulty: 'Medium', icon: Grid3X3, href: '/games/sliding-puzzle', color: 'text-blue-500' },
   { name: 'Daily Mystery Word', difficulty: 'Hard', icon: Type, href: '/games/daily-mystery-word', color: 'text-green-500' },
   { name: 'Number Pyramid', difficulty: 'Easy', icon: Hash, href: '/games/number-pyramid', color: 'text-amber-500' },
@@ -62,12 +63,11 @@ const multiplayerGames = [
   { name: 'Speed Math Duel', description: 'Race to solve math problems' },
   { name: 'Riddle Arena', description: 'Competitive puzzle solving' },
   { name: 'Memory Match Battle', description: 'Find pairs before your opponent' },
-  { name: 'Word Chain', description: 'Build words in turns' },
 ];
 
 const brainChallenges = [
   { name: 'Multiplication Sprint', description: 'Solve multiplication problems fast', icon: Calculator, color: 'bg-green-500', href: '/games/multiplication-sprint', status: 'active' },
-  { name: 'Mental Math', description: 'Quick arithmetic challenges', icon: Brain, color: 'bg-blue-500', href: '#', status: 'upcoming' },
+  { name: 'Mental Math', description: 'Quick arithmetic challenges', icon: Brain, color: 'bg-blue-500', href: '/games/mental-math', status: 'active' },
   { name: 'Number Sequences', description: 'Find the pattern and continue', icon: Hash, color: 'bg-amber-500', href: '/games/pattern-spotter', status: 'active' },
   { name: 'Quick Memory', description: 'Remember and recall numbers', icon: Zap, color: 'bg-purple-500', href: '/games/color-memory', status: 'active' },
 ];
