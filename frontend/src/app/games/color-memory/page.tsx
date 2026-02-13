@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth-context';
 import { GameType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Palette, Play, RotateCcw, Trophy } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 const COLORS = [
@@ -21,6 +21,71 @@ const COLORS = [
   { name: 'Purple', bg: 'bg-purple-500', value: 4 },
   { name: 'Orange', bg: 'bg-orange-500', value: 5 },
 ];
+
+type ColorMemoryConfig = {
+  colorCount: number;
+  initialSequenceLength: number;
+  preFlashMs: number;
+  flashMs: number;
+  pauseMs: number;
+};
+
+const getLevelConfig = (level: number): ColorMemoryConfig => {
+  if (level <= 6) {
+    return {
+      colorCount: 4,
+      initialSequenceLength: 3 + Math.floor((level - 1) / 2),
+      preFlashMs: 380,
+      flashMs: 380,
+      pauseMs: 220,
+    };
+  }
+
+  if (level <= 14) {
+    return {
+      colorCount: 5,
+      initialSequenceLength: 6 + Math.floor((level - 6) * 0.7),
+      preFlashMs: 320,
+      flashMs: 320,
+      pauseMs: 170,
+    };
+  }
+
+  return {
+    colorCount: 6,
+    initialSequenceLength: 12 + Math.floor((level - 14) * 0.55),
+    preFlashMs: 250,
+    flashMs: 250,
+    pauseMs: 130,
+  };
+};
+
+const pickNextColor = (colorCount: number, previousColor: number | null): number => {
+  if (colorCount <= 1) return 0;
+
+  let nextColor = Math.floor(Math.random() * colorCount);
+  if (previousColor === null) return nextColor;
+
+  while (nextColor === previousColor) {
+    nextColor = Math.floor(Math.random() * colorCount);
+  }
+
+  return nextColor;
+};
+
+const createSequence = (level: number): number[] => {
+  const config = getLevelConfig(level);
+  const sequence: number[] = [];
+
+  for (let i = 0; i < config.initialSequenceLength; i++) {
+    const previous = sequence.length ? sequence[sequence.length - 1] : null;
+    sequence.push(pickNextColor(config.colorCount, previous));
+  }
+
+  return sequence;
+};
+
+const scoreForLevel = (level: number) => Math.max(0, level * 160);
 
 export default function ColorMemoryPage() {
   const { user } = useAuth();
@@ -33,50 +98,56 @@ export default function ColorMemoryPage() {
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState<number | null>(null);
   const [level, setLevel] = useState(1);
+  const userIdentity = user as ({ id?: string; _id?: string } | null);
+  const userId = String(userIdentity?.id ?? userIdentity?._id ?? 'guest');
+  const storageKey = useMemo(() => `mirana_level_color_memory_${userId}`, [userId]);
+  const levelConfig = useMemo(() => getLevelConfig(level), [level]);
+  const visibleColors = useMemo(() => COLORS.slice(0, levelConfig.colorCount), [levelConfig.colorCount]);
 
   useEffect(() => {
-    if (user) {
-      if (user.progress?.[GameType.COLOR_MEMORY]) {
-        setLevel(user.progress[GameType.COLOR_MEMORY] + 1);
-      }
+    if (typeof window === 'undefined') return;
 
+    const savedLevel = Number.parseInt(localStorage.getItem(storageKey) || '1', 10);
+    const localLevel = Number.isFinite(savedLevel) && savedLevel > 0 ? savedLevel : 1;
+    const serverLevel = (user?.progress?.[GameType.COLOR_MEMORY] || 0) + 1;
+    const resumeLevel = Math.max(1, localLevel, serverLevel);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLevel(resumeLevel);
+
+    if (user) {
       api.getBestScore(GameType.COLOR_MEMORY)
         .then(({ bestScore }) => setBestScore(bestScore))
         .catch(console.error);
     }
-  }, [user]);
+  }, [storageKey, user]);
 
-  const showSequence = useCallback(async (seq: number[]) => {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(storageKey, level.toString());
+  }, [level, storageKey]);
+
+  const showSequence = useCallback(async (seq: number[], config: ColorMemoryConfig) => {
     setIsShowingSequence(true);
     for (let i = 0; i < seq.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, config.preFlashMs));
       setActiveColor(seq[i]);
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await new Promise(resolve => setTimeout(resolve, config.flashMs));
       setActiveColor(null);
+      await new Promise(resolve => setTimeout(resolve, config.pauseMs));
     }
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 220));
     setIsShowingSequence(false);
   }, []);
 
   const startGame = useCallback(async () => {
-    const newColor = Math.floor(Math.random() * COLORS.length);
-    setSequence([newColor]);
+    const startingSequence = createSequence(level);
     setPlayerSequence([]);
     setIsPlaying(true);
     setGameOver(false);
     setScore(0);
-    setLevel(1);
-    await showSequence([newColor]);
-  }, [showSequence]);
-
-  const nextLevel = useCallback(async () => {
-    const newColor = Math.floor(Math.random() * COLORS.length);
-    const newSequence = [...sequence, newColor];
-    setSequence(newSequence);
-    setPlayerSequence([]);
-    setLevel(l => l + 1);
-    await showSequence(newSequence);
-  }, [sequence, showSequence]);
+    setSequence(startingSequence);
+    await showSequence(startingSequence, levelConfig);
+  }, [level, levelConfig, showSequence]);
 
   const handleColorClick = useCallback(async (colorIndex: number) => {
     if (isShowingSequence || gameOver || !isPlaying) return;
@@ -89,17 +160,17 @@ export default function ColorMemoryPage() {
 
     const currentIndex = newPlayerSequence.length - 1;
     if (sequence[currentIndex] !== colorIndex) {
-      // Wrong color
       setGameOver(true);
       setIsPlaying(false);
-      const finalScore = (level - 1) * 100;
+      const achievedLevel = Math.max(level - 1, 0);
+      const finalScore = scoreForLevel(achievedLevel);
       setScore(finalScore);
 
       if (user && finalScore > 0) {
         api.submitScore({
           gameType: GameType.COLOR_MEMORY,
           score: finalScore,
-          level: level - 1,
+          level: achievedLevel,
         }).then(() => {
           toast.error(`Game Over! Reached level ${level}`);
           if (!bestScore || finalScore > bestScore) {
@@ -112,14 +183,21 @@ export default function ColorMemoryPage() {
       return;
     }
 
-    // Correct sequence so far
     if (newPlayerSequence.length === sequence.length) {
-      // Completed level
-      setScore(level * 100);
+      const nextLevel = level + 1;
+      const nextConfig = getLevelConfig(nextLevel);
+      const previousColor = sequence.length ? sequence[sequence.length - 1] : null;
+      const nextColor = pickNextColor(nextConfig.colorCount, previousColor);
+      const nextSequence = [...sequence, nextColor];
+
+      setScore(scoreForLevel(level));
+      setLevel(nextLevel);
+      setSequence(nextSequence);
+      setPlayerSequence([]);
       await new Promise(resolve => setTimeout(resolve, 500));
-      await nextLevel();
+      await showSequence(nextSequence, nextConfig);
     }
-  }, [isShowingSequence, gameOver, isPlaying, playerSequence, sequence, level, user, bestScore, nextLevel]);
+  }, [isShowingSequence, gameOver, isPlaying, playerSequence, sequence, level, user, bestScore, showSequence]);
 
   return (
     <div className="min-h-screen px-4 py-8">
@@ -167,7 +245,7 @@ export default function ColorMemoryPage() {
 
             {/* Color Grid */}
             <div className="grid grid-cols-3 gap-3">
-              {COLORS.map((color, index) => (
+              {visibleColors.map((color, index) => (
                 <button
                   key={color.name}
                   onClick={() => handleColorClick(index)}

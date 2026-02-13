@@ -2,130 +2,108 @@ import { Difficulty } from './schemas/game-level.schema';
 import { GameType } from './schemas/game-score.schema';
 
 // ==========================================
-// WORD CONNECT LEVELS (100+ levels)
+// WORD CONNECT LEVELS (dictionary-driven)
 // ==========================================
-export const wordConnectLevels = [
-  // Easy levels (1-30)
-  { level: 1, difficulty: Difficulty.EASY, letters: ['D', 'O', 'G'], words: ['DOG', 'GOD', 'DO', 'GO'], hint: "Man's best friend" },
-  { level: 2, difficulty: Difficulty.EASY, letters: ['C', 'A', 'T'], words: ['CAT', 'ACT', 'AT'], hint: 'Furry pet' },
-  { level: 3, difficulty: Difficulty.EASY, letters: ['S', 'U', 'N'], words: ['SUN', 'NUS', 'US'], hint: 'Gives us light' },
-  { level: 4, difficulty: Difficulty.EASY, letters: ['R', 'U', 'N'], words: ['RUN', 'URN', 'UN'], hint: 'Move fast' },
-  { level: 5, difficulty: Difficulty.EASY, letters: ['B', 'A', 'T'], words: ['BAT', 'TAB', 'AT'], hint: 'Flying mammal' },
-  { level: 6, difficulty: Difficulty.EASY, letters: ['H', 'A', 'T'], words: ['HAT', 'AH', 'AT'], hint: 'Wear on head' },
-  { level: 7, difficulty: Difficulty.EASY, letters: ['M', 'A', 'N'], words: ['MAN', 'AN', 'AM'], hint: 'Adult male' },
-  { level: 8, difficulty: Difficulty.EASY, letters: ['P', 'A', 'N'], words: ['PAN', 'NAP', 'AN'], hint: 'Cooking tool' },
-  { level: 9, difficulty: Difficulty.EASY, letters: ['W', 'I', 'N'], words: ['WIN', 'IN'], hint: 'Opposite of lose' },
-  { level: 10, difficulty: Difficulty.EASY, letters: ['B', 'U', 'S'], words: ['BUS', 'SUB', 'US'], hint: 'Public transport' },
-  { level: 11, difficulty: Difficulty.EASY, letters: ['C', 'U', 'P'], words: ['CUP', 'UP'], hint: 'Drink from it' },
-  { level: 12, difficulty: Difficulty.EASY, letters: ['G', 'U', 'M'], words: ['GUM', 'MUG', 'UM'], hint: 'Chew it' },
-  { level: 13, difficulty: Difficulty.EASY, letters: ['P', 'E', 'N'], words: ['PEN', 'EN'], hint: 'Writing tool' },
-  { level: 14, difficulty: Difficulty.EASY, letters: ['B', 'E', 'D'], words: ['BED', 'DEB'], hint: 'Sleep here' },
-  { level: 15, difficulty: Difficulty.EASY, letters: ['L', 'E', 'G'], words: ['LEG', 'GEL', 'EL'], hint: 'Body part' },
-  { level: 16, difficulty: Difficulty.EASY, letters: ['E', 'G', 'G'], words: ['EGG', 'GE'], hint: 'Breakfast food' },
-  { level: 17, difficulty: Difficulty.EASY, letters: ['S', 'A', 'D'], words: ['SAD', 'ADS', 'AD', 'AS'], hint: 'Unhappy feeling' },
-  { level: 18, difficulty: Difficulty.EASY, letters: ['M', 'A', 'D'], words: ['MAD', 'DAM', 'AD', 'AM'], hint: 'Angry' },
-  { level: 19, difficulty: Difficulty.EASY, letters: ['B', 'A', 'D'], words: ['BAD', 'DAB', 'AD'], hint: 'Not good' },
-  { level: 20, difficulty: Difficulty.EASY, letters: ['R', 'E', 'D'], words: ['RED', 'ERE'], hint: 'Color of apple' },
-  { level: 21, difficulty: Difficulty.EASY, letters: ['H', 'E', 'N'], words: ['HEN', 'EN', 'HE'], hint: 'Female chicken' },
-  { level: 22, difficulty: Difficulty.EASY, letters: ['P', 'I', 'G'], words: ['PIG', 'GI'], hint: 'Farm animal' },
-  { level: 23, difficulty: Difficulty.EASY, letters: ['F', 'I', 'N'], words: ['FIN', 'IF', 'IN'], hint: 'Fish has it' },
-  { level: 24, difficulty: Difficulty.EASY, letters: ['J', 'A', 'M'], words: ['JAM', 'AM'], hint: 'Spread on bread' },
-  { level: 25, difficulty: Difficulty.EASY, letters: ['G', 'A', 'P'], words: ['GAP', 'PA', 'AG'], hint: 'Empty space' },
-  { level: 26, difficulty: Difficulty.EASY, letters: ['Z', 'O', 'O'], words: ['ZOO', 'OO'], hint: 'Animals live here' },
-  { level: 27, difficulty: Difficulty.EASY, letters: ['W', 'E', 'T'], words: ['WET', 'TEW', 'WE'], hint: 'Not dry' },
-  { level: 28, difficulty: Difficulty.EASY, letters: ['H', 'O', 'T'], words: ['HOT', 'OH', 'TO'], hint: 'High temperature' },
-  { level: 29, difficulty: Difficulty.EASY, letters: ['B', 'I', 'G'], words: ['BIG', 'GI'], hint: 'Large' },
-  { level: 30, difficulty: Difficulty.EASY, letters: ['D', 'I', 'G'], words: ['DIG', 'GI', 'ID'], hint: 'Make a hole' },
+const normalizeWord = (value: string): string =>
+  value.toUpperCase().replace(/[^A-Z]/g, '');
 
-  // Medium levels (31-70)
-  { level: 31, difficulty: Difficulty.MEDIUM, letters: ['C', 'A', 'T', 'S'], words: ['CAT', 'CATS', 'SAT', 'ACT', 'ACTS', 'CAST'], hint: 'Furry pets' },
-  { level: 32, difficulty: Difficulty.MEDIUM, letters: ['W', 'O', 'R', 'D'], words: ['WORD', 'ROW', 'ROD', 'OWN', 'WORN', 'DOWN'], hint: 'What you read' },
-  { level: 33, difficulty: Difficulty.MEDIUM, letters: ['T', 'I', 'M', 'E'], words: ['TIME', 'ITEM', 'EMIT', 'MITE', 'TIE', 'MET'], hint: 'Clock shows this' },
-  { level: 34, difficulty: Difficulty.MEDIUM, letters: ['P', 'L', 'A', 'Y'], words: ['PLAY', 'PAL', 'LAY', 'PAY', 'LAP'], hint: 'What kids do' },
-  { level: 35, difficulty: Difficulty.MEDIUM, letters: ['S', 'T', 'A', 'R'], words: ['STAR', 'RATS', 'ARTS', 'TAR', 'SAT', 'RAT'], hint: 'Twinkle twinkle' },
-  { level: 36, difficulty: Difficulty.MEDIUM, letters: ['H', 'O', 'M', 'E'], words: ['HOME', 'HEM', 'HOE', 'MOE'], hint: 'Where you live' },
-  { level: 37, difficulty: Difficulty.MEDIUM, letters: ['L', 'O', 'V', 'E'], words: ['LOVE', 'VOLE', 'OLE', 'LEVO'], hint: 'Strong feeling' },
-  { level: 38, difficulty: Difficulty.MEDIUM, letters: ['F', 'I', 'R', 'E'], words: ['FIRE', 'RIFE', 'FIER', 'IRE', 'FIR'], hint: 'Burns hot' },
-  { level: 39, difficulty: Difficulty.MEDIUM, letters: ['G', 'A', 'M', 'E'], words: ['GAME', 'MAGE', 'MEGA', 'AGE', 'GEM'], hint: 'Fun activity' },
-  { level: 40, difficulty: Difficulty.MEDIUM, letters: ['C', 'A', 'K', 'E'], words: ['CAKE', 'ACE', 'AKE'], hint: 'Birthday treat' },
-  { level: 41, difficulty: Difficulty.MEDIUM, letters: ['R', 'I', 'C', 'E'], words: ['RICE', 'ICE', 'IRE', 'ERIC'], hint: 'Asian staple' },
-  { level: 42, difficulty: Difficulty.MEDIUM, letters: ['D', 'A', 'R', 'K'], words: ['DARK', 'ARK', 'RAD'], hint: 'No light' },
-  { level: 43, difficulty: Difficulty.MEDIUM, letters: ['L', 'I', 'N', 'K'], words: ['LINK', 'INK', 'KIN', 'NIL'], hint: 'Connection' },
-  { level: 44, difficulty: Difficulty.MEDIUM, letters: ['W', 'A', 'V', 'E'], words: ['WAVE', 'AWE', 'AVE', 'EVA', 'WAV'], hint: 'Ocean motion' },
-  { level: 45, difficulty: Difficulty.MEDIUM, letters: ['B', 'E', 'A', 'R'], words: ['BEAR', 'BARE', 'BRAE', 'ARE', 'EAR', 'ERA'], hint: 'Forest animal' },
-  { level: 46, difficulty: Difficulty.MEDIUM, letters: ['P', 'A', 'R', 'K'], words: ['PARK', 'PAR', 'RAP', 'ARK'], hint: 'Green space' },
-  { level: 47, difficulty: Difficulty.MEDIUM, letters: ['R', 'O', 'A', 'D'], words: ['ROAD', 'OAR', 'ROD', 'ADO', 'RAD'], hint: 'Cars drive here' },
-  { level: 48, difficulty: Difficulty.MEDIUM, letters: ['T', 'R', 'E', 'E'], words: ['TREE', 'TEER', 'ERE', 'TEE', 'RET'], hint: 'Has leaves' },
-  { level: 49, difficulty: Difficulty.MEDIUM, letters: ['K', 'I', 'N', 'G'], words: ['KING', 'KIN', 'INK', 'GIN'], hint: 'Royal male' },
-  { level: 50, difficulty: Difficulty.MEDIUM, letters: ['R', 'I', 'N', 'G'], words: ['RING', 'GRIN', 'RIG', 'GIN'], hint: 'Wear on finger' },
-  { level: 51, difficulty: Difficulty.MEDIUM, letters: ['S', 'I', 'N', 'G'], words: ['SING', 'SIGN', 'SIN', 'GIN', 'INS'], hint: 'Use voice for music' },
-  { level: 52, difficulty: Difficulty.MEDIUM, letters: ['W', 'I', 'N', 'G'], words: ['WING', 'WIN', 'WIG', 'GIN'], hint: 'Birds have two' },
-  { level: 53, difficulty: Difficulty.MEDIUM, letters: ['B', 'O', 'N', 'E'], words: ['BONE', 'BOON', 'ONE', 'EON', 'NOB'], hint: 'Inside body' },
-  { level: 54, difficulty: Difficulty.MEDIUM, letters: ['Z', 'O', 'N', 'E'], words: ['ZONE', 'ONE', 'EON', 'ZEN'], hint: 'Area or region' },
-  { level: 55, difficulty: Difficulty.MEDIUM, letters: ['C', 'O', 'N', 'E'], words: ['CONE', 'ONCE', 'ONE', 'EON', 'CON'], hint: 'Ice cream holder' },
-  { level: 56, difficulty: Difficulty.MEDIUM, letters: ['L', 'I', 'F', 'E'], words: ['LIFE', 'FILE', 'LIE', 'FIE', 'ELF'], hint: 'Living' },
-  { level: 57, difficulty: Difficulty.MEDIUM, letters: ['W', 'I', 'F', 'E'], words: ['WIFE', 'WIF', 'FIE', 'WE'], hint: 'Married woman' },
-  { level: 58, difficulty: Difficulty.MEDIUM, letters: ['G', 'I', 'F', 'T'], words: ['GIFT', 'FIG', 'FIT', 'GIT'], hint: 'Present' },
-  { level: 59, difficulty: Difficulty.MEDIUM, letters: ['L', 'I', 'F', 'T'], words: ['LIFT', 'FLIT', 'LIT', 'FIT'], hint: 'Raise up' },
-  { level: 60, difficulty: Difficulty.MEDIUM, letters: ['S', 'H', 'I', 'P'], words: ['SHIP', 'HIPS', 'HIP', 'SIP', 'HIS'], hint: 'Sails the sea' },
-  { level: 61, difficulty: Difficulty.MEDIUM, letters: ['C', 'H', 'I', 'P'], words: ['CHIP', 'HIP', 'HIC', 'PIC'], hint: 'Potato snack' },
-  { level: 62, difficulty: Difficulty.MEDIUM, letters: ['W', 'H', 'I', 'P'], words: ['WHIP', 'HIP', 'WIP'], hint: 'Cream topping' },
-  { level: 63, difficulty: Difficulty.MEDIUM, letters: ['G', 'R', 'I', 'P'], words: ['GRIP', 'GRIT', 'RIP', 'RIG', 'PIG'], hint: 'Hold tight' },
-  { level: 64, difficulty: Difficulty.MEDIUM, letters: ['D', 'R', 'I', 'P'], words: ['DRIP', 'RIP', 'RID', 'DIP'], hint: 'Water drops' },
-  { level: 65, difficulty: Difficulty.MEDIUM, letters: ['T', 'R', 'I', 'P'], words: ['TRIP', 'TRAP', 'RIP', 'TIP', 'PIT'], hint: 'Journey' },
-  { level: 66, difficulty: Difficulty.MEDIUM, letters: ['S', 'N', 'O', 'W'], words: ['SNOW', 'SOWN', 'NOW', 'OWN', 'SON', 'WON'], hint: 'Winter white' },
-  { level: 67, difficulty: Difficulty.MEDIUM, letters: ['S', 'H', 'O', 'W'], words: ['SHOW', 'HOWS', 'HOW', 'SOW', 'WHO'], hint: 'Display' },
-  { level: 68, difficulty: Difficulty.MEDIUM, letters: ['G', 'L', 'O', 'W'], words: ['GLOW', 'GLOB', 'LOG', 'LOW', 'OWL'], hint: 'Shine softly' },
-  { level: 69, difficulty: Difficulty.MEDIUM, letters: ['F', 'L', 'O', 'W'], words: ['FLOW', 'FOWL', 'LOW', 'OWL', 'FLU'], hint: 'Stream movement' },
-  { level: 70, difficulty: Difficulty.MEDIUM, letters: ['G', 'R', 'O', 'W'], words: ['GROW', 'ROW', 'OWE', 'WOE', 'GOT'], hint: 'Get bigger' },
+const hasUniqueLetters = (word: string): boolean => {
+  const chars = word.split('');
+  return new Set(chars).size === chars.length;
+};
 
-  // Hard levels (71-100)
-  { level: 71, difficulty: Difficulty.HARD, letters: ['L', 'I', 'G', 'H', 'T'], words: ['LIGHT', 'GILT', 'HILT', 'HIT', 'LIT', 'GIT'], hint: 'Opposite of dark' },
-  { level: 72, difficulty: Difficulty.HARD, letters: ['N', 'I', 'G', 'H', 'T'], words: ['NIGHT', 'THING', 'THIN', 'HINT', 'GIN', 'NIT'], hint: 'Dark hours' },
-  { level: 73, difficulty: Difficulty.HARD, letters: ['R', 'I', 'G', 'H', 'T'], words: ['RIGHT', 'GIRTH', 'GRIT', 'TIGHT', 'HIT', 'RIG'], hint: 'Not wrong' },
-  { level: 74, difficulty: Difficulty.HARD, letters: ['F', 'I', 'G', 'H', 'T'], words: ['FIGHT', 'GIFT', 'FIG', 'FIT', 'HIT', 'GIT'], hint: 'Battle' },
-  { level: 75, difficulty: Difficulty.HARD, letters: ['S', 'I', 'G', 'H', 'T'], words: ['SIGHT', 'GIST', 'HITS', 'HIT', 'SIT', 'GIT'], hint: 'Vision' },
-  { level: 76, difficulty: Difficulty.HARD, letters: ['B', 'R', 'I', 'D', 'E'], words: ['BRIDE', 'BIRD', 'BRIE', 'RIDE', 'RIB', 'BID', 'RID'], hint: 'Wedding woman' },
-  { level: 77, difficulty: Difficulty.HARD, letters: ['P', 'R', 'I', 'D', 'E'], words: ['PRIDE', 'DRIP', 'RIPE', 'RIDE', 'PIE', 'RIP', 'RED'], hint: 'Self-respect' },
-  { level: 78, difficulty: Difficulty.HARD, letters: ['G', 'R', 'A', 'P', 'E'], words: ['GRAPE', 'GAPE', 'PAGE', 'RAGE', 'REAP', 'PEAR', 'GEAR', 'AGE'], hint: 'Wine fruit' },
-  { level: 79, difficulty: Difficulty.HARD, letters: ['S', 'P', 'A', 'C', 'E'], words: ['SPACE', 'PACE', 'ACES', 'CAPE', 'CAPS', 'CASE', 'ACE', 'SPA'], hint: 'Outer cosmos' },
-  { level: 80, difficulty: Difficulty.HARD, letters: ['P', 'L', 'A', 'C', 'E'], words: ['PLACE', 'LACE', 'PALE', 'CLAP', 'LEAP', 'PEAL', 'CAP', 'LAP'], hint: 'Location' },
-  { level: 81, difficulty: Difficulty.HARD, letters: ['T', 'R', 'A', 'C', 'E'], words: ['TRACE', 'CRATE', 'REACT', 'CARE', 'RACE', 'TEAR', 'ACE', 'ARC'], hint: 'Follow a path' },
-  { level: 82, difficulty: Difficulty.HARD, letters: ['G', 'R', 'A', 'C', 'E'], words: ['GRACE', 'RACER', 'CAGE', 'CARE', 'RACE', 'ACRE', 'AGE', 'ARC'], hint: 'Elegance' },
-  { level: 83, difficulty: Difficulty.HARD, letters: ['B', 'R', 'A', 'C', 'E'], words: ['BRACE', 'CRAB', 'CARE', 'RACE', 'BEAR', 'BARE', 'ACE', 'ARC'], hint: 'Support' },
-  { level: 84, difficulty: Difficulty.HARD, letters: ['W', 'A', 'T', 'E', 'R'], words: ['WATER', 'WART', 'WEAR', 'TEAR', 'RATE', 'WATE', 'ATE', 'EAT', 'TAR'], hint: 'H2O' },
-  { level: 85, difficulty: Difficulty.HARD, letters: ['E', 'A', 'R', 'T', 'H'], words: ['EARTH', 'HEART', 'HATER', 'HEAT', 'HATE', 'RATE', 'EAT', 'TAR', 'ARE'], hint: 'Our planet' },
-  { level: 86, difficulty: Difficulty.HARD, letters: ['H', 'E', 'A', 'R', 'T'], words: ['HEART', 'EARTH', 'HATER', 'HEAT', 'TEAR', 'RATE', 'EAT', 'TAR', 'HAT'], hint: 'Love organ' },
-  { level: 87, difficulty: Difficulty.HARD, letters: ['S', 'M', 'A', 'R', 'T'], words: ['SMART', 'MARTS', 'TRAMS', 'ARTS', 'MARS', 'RATS', 'TAR', 'SAT', 'MAT'], hint: 'Clever' },
-  { level: 88, difficulty: Difficulty.HARD, letters: ['S', 'T', 'A', 'R', 'T'], words: ['START', 'TARTS', 'RATS', 'ARTS', 'TART', 'STAT', 'TAR', 'SAT', 'RAT'], hint: 'Begin' },
-  { level: 89, difficulty: Difficulty.HARD, letters: ['S', 'T', 'O', 'R', 'M'], words: ['STORM', 'SPORT', 'MOST', 'SORT', 'TOMS', 'ROTS', 'MOT', 'ROT', 'TOM'], hint: 'Bad weather' },
-  { level: 90, difficulty: Difficulty.HARD, letters: ['S', 'T', 'O', 'R', 'Y'], words: ['STORY', 'ROSY', 'TOYS', 'SORT', 'ROTS', 'TORY', 'TOY', 'ROT', 'TRY'], hint: 'Tale' },
-  { level: 91, difficulty: Difficulty.HARD, letters: ['D', 'R', 'E', 'A', 'M'], words: ['DREAM', 'ARMED', 'DRAM', 'MADE', 'READ', 'MARE', 'DAM', 'MAD', 'RED'], hint: 'Sleep vision' },
-  { level: 92, difficulty: Difficulty.HARD, letters: ['S', 'T', 'E', 'A', 'M'], words: ['STEAM', 'MEATS', 'TEAMS', 'MEAT', 'MATE', 'SEAT', 'SAT', 'EAT', 'MET'], hint: 'Hot water vapor' },
-  { level: 93, difficulty: Difficulty.HARD, letters: ['C', 'R', 'E', 'A', 'M'], words: ['CREAM', 'RACER', 'CARE', 'RACE', 'MARE', 'ACRE', 'CAR', 'ARC', 'EAR'], hint: 'In coffee' },
-  { level: 94, difficulty: Difficulty.HARD, letters: ['S', 'C', 'O', 'R', 'E'], words: ['SCORE', 'CORES', 'CORSE', 'CORE', 'ROSE', 'SORE', 'COR', 'ORE', 'ROE'], hint: 'Game points' },
-  { level: 95, difficulty: Difficulty.HARD, letters: ['S', 'T', 'O', 'N', 'E'], words: ['STONE', 'NOTES', 'TONES', 'TONE', 'NOTE', 'SENT', 'NOT', 'ONE', 'TON'], hint: 'Rock' },
-  { level: 96, difficulty: Difficulty.HARD, letters: ['P', 'H', 'O', 'N', 'E'], words: ['PHONE', 'HONE', 'HOPE', 'PONE', 'OPEN', 'PEON', 'ONE', 'HOP', 'PEN'], hint: 'Call device' },
-  { level: 97, difficulty: Difficulty.HARD, letters: ['M', 'O', 'N', 'E', 'Y'], words: ['MONEY', 'ENEMY', 'MOON', 'OMEN', 'NOME', 'MONO', 'MEN', 'ONE', 'YEN'], hint: 'Currency' },
-  { level: 98, difficulty: Difficulty.HARD, letters: ['H', 'O', 'N', 'E', 'Y'], words: ['HONEY', 'HONE', 'HONE', 'NONE', 'HYENA', 'HEN', 'ONE', 'YEN', 'HON'], hint: 'Bee product' },
-  { level: 99, difficulty: Difficulty.HARD, letters: ['W', 'O', 'R', 'L', 'D'], words: ['WORLD', 'ROWLD', 'WORD', 'LORD', 'OLD', 'OWL', 'ROW', 'LOW', 'ROD'], hint: 'Earth globe' },
-  { level: 100, difficulty: Difficulty.HARD, letters: ['P', 'O', 'W', 'E', 'R'], words: ['POWER', 'ROWER', 'PROW', 'ROPE', 'WORE', 'PORE', 'OWE', 'ROW', 'POW'], hint: 'Strength' },
+const canBuildFromLetters = (word: string, letters: string[]): boolean => {
+  const pool = new Map<string, number>();
+  for (const char of letters) {
+    pool.set(char, (pool.get(char) || 0) + 1);
+  }
 
-  // Expert levels (101-120)
-  { level: 101, difficulty: Difficulty.EXPERT, letters: ['F', 'R', 'I', 'E', 'N', 'D'], words: ['FRIEND', 'FINDER', 'FIRED', 'FRIED', 'FINE', 'FIND', 'REIN', 'DIRE', 'FERN'], hint: 'Buddy' },
-  { level: 102, difficulty: Difficulty.EXPERT, letters: ['C', 'H', 'A', 'N', 'G', 'E'], words: ['CHANGE', 'CHANCE', 'HANG', 'EACH', 'CAGE', 'ACHE', 'AGE', 'CAN', 'HEN'], hint: 'Transform' },
-  { level: 103, difficulty: Difficulty.EXPERT, letters: ['S', 'T', 'R', 'O', 'N', 'G'], words: ['STRONG', 'TONGS', 'GONGS', 'SONGS', 'SORT', 'TORN', 'NOT', 'GOT', 'ROT'], hint: 'Powerful' },
-  { level: 104, difficulty: Difficulty.EXPERT, letters: ['S', 'P', 'R', 'I', 'N', 'G'], words: ['SPRING', 'RINGS', 'GRINS', 'PRIGS', 'SING', 'RING', 'SPIN', 'GRIN', 'RIP'], hint: 'Season' },
-  { level: 105, difficulty: Difficulty.EXPERT, letters: ['T', 'H', 'I', 'N', 'G', 'S'], words: ['THINGS', 'NIGHTS', 'SITING', 'THING', 'SIGHT', 'NIGHT', 'HINT', 'THIS', 'HIT'], hint: 'Objects' },
-  { level: 106, difficulty: Difficulty.EXPERT, letters: ['P', 'L', 'A', 'N', 'E', 'T'], words: ['PLANET', 'PLATEN', 'PLANT', 'PLANE', 'PLATE', 'LEANT', 'PETAL', 'PLAN', 'LANE'], hint: 'Earth or Mars' },
-  { level: 107, difficulty: Difficulty.EXPERT, letters: ['G', 'A', 'R', 'D', 'E', 'N'], words: ['GARDEN', 'RANGED', 'DANGER', 'GRAND', 'GRADE', 'ANGER', 'RANGE', 'DEAR', 'NEAR'], hint: 'Flowers grow here' },
-  { level: 108, difficulty: Difficulty.EXPERT, letters: ['W', 'I', 'N', 'T', 'E', 'R'], words: ['WINTER', 'WRITER', 'TWINER', 'INTER', 'WRITE', 'INERT', 'TWIN', 'WINE', 'WIRE'], hint: 'Cold season' },
-  { level: 109, difficulty: Difficulty.EXPERT, letters: ['S', 'U', 'M', 'M', 'E', 'R'], words: ['SUMMER', 'RUMMERS', 'MUSER', 'RUM', 'SUM', 'USE', 'RUE', 'MUM'], hint: 'Hot season' },
-  { level: 110, difficulty: Difficulty.EXPERT, letters: ['A', 'U', 'T', 'U', 'M', 'N'], words: ['AUTUMN', 'MUTANT', 'AUNT', 'TUNA', 'MANNA', 'NUT', 'TAN', 'MAN'], hint: 'Fall season' },
-].map(l => ({ ...l, gameType: GameType.WORD_CONNECT }));
+  for (const char of word) {
+    const remaining = pool.get(char) || 0;
+    if (remaining <= 0) return false;
+    pool.set(char, remaining - 1);
+  }
+
+  return true;
+};
+
+const difficultyFromLevelShape = (letterCount: number, wordCount: number): Difficulty => {
+  if (letterCount <= 4) {
+    return wordCount >= 7 ? Difficulty.MEDIUM : Difficulty.EASY;
+  }
+  if (letterCount === 5) {
+    return wordCount >= 10 ? Difficulty.HARD : Difficulty.MEDIUM;
+  }
+  if (letterCount === 6) {
+    return wordCount >= 12 ? Difficulty.EXPERT : Difficulty.HARD;
+  }
+  return Difficulty.EXPERT;
+};
+
+const minWordsByLetterCount: Record<number, number> = {
+  4: 4,
+  5: 6,
+  6: 8,
+  7: 10,
+  8: 11,
+};
+
+const capWordsByLetterCount: Record<number, number> = {
+  4: 9,
+  5: 12,
+  6: 15,
+  7: 18,
+  8: 20,
+};
+
+const WORD_CONNECT_SHORT_DICTIONARY = `
+AN AS AT AM AX BE BY DO GO HE IF IN IS IT ME MY NO OF ON OR OX TO UP US WE
+ACE ACT ADD ADO ADS AGE AGO AID AIL AIM AIR ALE ALL ANT ANY ARC ARE ARM ART ASH ASK ATE
+AWE AWL BAD BAG BAN BAR BAT BAY BED BEE BEN BET BID BIG BIN BIT BOB BOG BOY BRA BUG BUN
+BUS BUT BUY CAB CAD CAN CAP CAR CAT COW COP COD COG COT CUB CUP CUT DAY DEN DEW DID DIE DIG
+DIN DIP DOE DOG DOT DRY DUB DUE DUO EAR EAT EEL EGG EGO ELF ELM END ERA EVE EYE FAN FAR FAT
+FED FEE FEW FIG FIN FIR FIT FIX FLY FOE FOG FOR FOX FUN FUR GAP GAS GEM GET GIG GIN GOD GUM
+GUN GUY HAD HAS HAT HAY HEM HEN HER HID HIM HIP HIT HOG HOP HOT HOW HUG HUT ICE INK ION ITS
+JAM JAR JAW JET JIG JOB JOG JOY KEY KID KIN KIT LAB LAD LAG LAP LAW LAY LEG LET LID LIE LIP
+LIT LOG LOT LOW MAD MAN MAP MAT MAY MEN MET MID MIL MIX MOB MOP MUD MUG NAP NET NEW NOD NOR
+NOT NOW NUN NUT OAR ODD ORE OUR OUT OVA OWE OWN PAD PAL PAN PAR PAT PAW PAY PEA PEG PEN PET
+PIE PIG PIN PIT POD POP POT PRO PUB PUN PUP PUT RAG RAM RAN RAP RAT RAW RAY RED RIB RID RIG
+RIM RIP ROB ROD ROE ROT ROW RUB RUG RUN RYE SAD SAG SAT SAW SAY SEA SEE SET SEW SHE SHY SIN
+SIP SIT SIX SKI SKY SOB SON SOW SPA SUB SUE SUM SUN TAB TAG TAN TAP TAR TAX TEA TEN TIE TIN
+TIP TOE TOM TON TOP TOW TOY TRY TUB TUG TWO USE VAN VAT VET VOW WAR WAS WAX WAY WEB WED WET
+WHO WHY WIG WIN WIT WOE WOK WON WOW YAK YAM YAP YAW YEN YES YET YOU ZAP ZEN ZIP ZOO
+ABLE ACID ACNE AGED ALSO AMEN ANEW APEX ARCH AREA ARTS ATOM AUNT AWAY AXIS BABY BACK BAKE
+BALL BAND BANK BARE BARK BASE BATH BEAD BEAK BEAM BEAN BEAR BEAT BELL BELT BEND BENT BEST
+BETA BIND BIRD BITE BLADE BLOW BLUE BOAT BODY BOLD BONE BOOK BOOM BOOT BORE BORN BOSS BOTH
+BOWL BULB BURN BURY BUSH BUSY CAFE CAKE CALM CAME CAMP CARD CARE CASE CASH CAST CAVE CELL
+CHAT CHEF CHIP CITY CLAY CLUB COAL COAT CODE COIN COLD COME COOK COOL COPE CORE COST CREW
+CROP CURE CURL CURB DARE DARK DATA DATE DAWN DEAL DEAR DEBT DEEP DESK DIAL DICE DIET DIME
+DINE DIRT DISH DIVE DOCK DOME DONE DOOR DOSE DOWN DRAG DRAW DROP DRUM DUAL DUST DUTY EACH
+EARN EASE EAST EDGE EDIT EVEN EVER EXIT FACE FACT FADE FAIL FAIR FALL FAME FARM FAST FATE
+FEAR FEAT FEED FEEL FILE FILM FIND FIRE FIRM FISH FIZZ FLAG FLAT FLEA FLEW FLOW FOOD FOOT
+FORM FORT FUEL FULL FUND GAIN GAME GATE GEAR GIFT GIRL GIVE GLAD GLASS GLOW GOAL GOLD GOLF
+GOOD GRAIN GRIP GROW HAIR HALF HALL HAND HANG HARD HARM HATE HAVE HEAD HEAL HEAR HEAT HELP
+HIDE HILL HINT HIRE HOLD HOLE HOLY HOME HOPE HORN HOST HOUR HUGE HUNT HURT IDEA IDLE INTO
+IRON ITEM JAIL JOIN JOKE JOLT JUMP JURY JUST KEEP KENT KICK KIND KING KITE KNEE KNIT KNOW
+LACE LACK LAKE LAND LANE LAST LATE LEAD LEAF LEAN LEAP LEFT LENS LESS LICK LIFE LIFT LIKE
+LINE LINK LIST LIVE LOAD LOAN LOCK LONG LOOK LORD LOSE LOSS LOUD LOVE LUCK LUNG MADE MAIL
+MAIN MAKE MANY MARK MATE MATH MEAL MEAN MEET MELT MENU MESS MILD MIND MINE MISS MODE MOON
+MORE MOST MOVE MUCH MUST NAME NAVY NEAR NEAT NEED NEST NICE NICK NODE NOSE NOTE OATH ONCE
+ONLY OPEN ORAL OVER PACK PAGE PAIN PAIR PALE PARK PART PASS PAST PATH PEAK PEAR PEEL PEER
+PICK PILE PINE PINK PIPE PLAN PLAY PLOT PLUS POEM POLE POOL POOR PORT POST PREP PURE PUSH
+RACE RACK RAGE RAIL RAIN RANK RATE READ REAL REAP REAR RENT REST RICE RICH RIDE RING RISE
+RISK ROAD ROCK ROLE ROOF ROOM ROOT ROPE ROSE RULE RUSH SAFE SAIL SALT SAME SAND SAVE SCAN
+SEAL SEAT SEED SEEK SEEN SELF SELL SEND SHIP SHOP SHOT SHOW SIDE SIGN SILK SING SITE SIZE
+SKIN SLIP SLOW SNOW SOFT SOIL SOLD SOLE SONG SOON SORT SOUL SPIN STAR STAY STEM STEP STIR
+STOP STORM STOW SUCH SUIT SURE SWIM TAKE TALE TALK TALL TANK TASK TEAM TELL TEND TERM TEST
+THAN THAT THEM THEN TIDE TIES TIME TINY TONE TONG TOOL TOUR TOWN TRAP TREE TRIP TRUE TUNE
+TURN TYPE UNIT UPON URGE USER USED VARY VAST VERY VIEW VINE VOID VOTE WAKE WALK WALL WARM
+WASH WAVE WEAK WEAR WEEP WELL WENT WEST WHAT WHEN WHIP WIDE WIFE WILD WILL WIND WINE WING
+WIRE WISH WOOD WOOL WORD WORK YARD YEAR YELL YOGA YOUNG YOUR ZONE
+`.trim().split(/\s+/);
 
 // ==========================================
-// DAILY MYSTERY WORDS (365+ words)
+// DAILY MYSTERY WORDS (200+ words)
 // ==========================================
 const dailyWordsRaw = [
   'BRAIN', 'LOGIC', 'SMART', 'THINK', 'LEARN', 'FOCUS', 'SOLVE', 'QUEST',
@@ -174,91 +152,260 @@ const dailyWordsRaw = [
   'GOAL', 'PLAN', 'PATH', 'STEP', 'MOVE', 'GROW', 'REACH', 'ACHIEVE',
 ].filter(w => w.length === 5);
 
-export const dailyMysteryWords = dailyWordsRaw.map((word, index) => ({
+const WORD_CONNECT_EXTRA_CHALLENGE_WORDS = `
+ABSENT ABSORB ACTIVE ADVICE AERIAL AFFIX AGILE ANCHOR ANNUAL APPEAL ARCANE
+BADGER BALANCE BANNER BATTLE BEACON BEAUTY BEHAVE BELONG BETTER BINARY BLAZER
+BORDER BRAINY BRANCH BRIGHT BROKER BUDGET BULLET BUTTER BUTTON CANDLE CANVAS
+CAPTAIN CAREFUL CARRIER CARTON CAUTION CHAMBER CHARGER CHARTER CIRCLE CLIENT
+CLIMBER CLOTHES COASTER COMBINE COMFORT COMPACT COMPASS CONCERT CONDUCT CONSENT
+CONTACT CONVERT CORNER COTTON COUNTRY CRAFTED CREATOR CREDIT CRYSTAL CUSTOM
+DAMAGE DANCER DEALER DEBATE DECODE DECORATE DEFEND DELIVER DEMAND DENTAL DEPART
+DETAIL DEVOUR DIALOG DIRECT DOCTOR DOMAIN DRAGON DRAWER DRIVER DYNAMIC EASILY
+EDITOR EFFECT EITHER EMPIRE ENABLE ENERGY ENGINE ENJOYER ENTIRE EQUATOR ESCAPE
+ESTATE ETHICS EVOLVE EXAMPLE EXCITE EXCITED EXHIBIT EXPORT FABRIC FACTOR FAMOUS
+FASHION FATHER FELLOW FIBER FINALIZE FINANCE FIXTURE FLIGHT FLOWER FOCUSED FOREST
+FORMAL FORTUNE FORWARD FREEZER FRIENDLY FROZEN FUTURE GALAXY GARDEN GENERAL
+GENIUS GLOBAL GOLDEN GRAVITY HARBOR HARMONY HEALTH HERALD HIDDEN HIGHWAY HUNTER
+IGNORE IMPACT IMPORT IMPROVE INCOME INSIGHT INVEST ISLAND JACKET JUNGLE JUSTICE
+KERNEL KEYBOARD KINDLE KITTEN LADDER LANDER LAUNCH LEADER LEGACY LETTER LIBERTY
+LIMIT LIGHTER LINKED LIQUID LISTEN LITTLE LOGICAL LUXURY MAGNET MAKER MARKET
+MASTER MEADOW MEMORY MENTOR MIDDLE MIRROR MOBILE MODERN MOMENT MONITOR MOTHER
+MOTION MOUNTAIN MYSTIC NATION NATURE NEUTRAL NICKEL NORMAL NOTICE NOVELTY NUCLEAR
+OBJECT OCEANIC OFFICE OPTICAL ORBIT ORCHARD OUTFIT OUTPUT OXFORD PACKET PAINTER
+PANEL PARALLEL PARENT PARTNER PASSAGE PATTERN PEARL PENCIL PEOPLE PHOENIX PILOT
+PLANET PLANNER PLAYER PLEASURE POCKET POETRY POLAR PORTAL POTENTIAL POWDER PRAYER
+PREMIUM PRESENT PREVENT PRINTER PRIVACY PROBLEM PROCESS PRODUCT PROFILE PROJECT
+PROMISE PROPER PROTECT PROTEIN PROTON PULSAR PURPLE QUALITY QUANTUM QUIETLY RANGER
+RAPTURE READER REBOUND RECORD REFLECT REFORM REGION RELAXED RELIANCE REMOTE RENDER
+REPAIR REPEAT REPORT RESCUE RESERVE RESULT RETAIN RETRO REWARD RHYTHM ROCKET ROUTER
+SAFETY SALMON SAMPLE SATURN SCALAR SCHOLAR SCREEN SEARCH SEASON SENSOR SERVER SHADOW
+SHARING SIGNAL SILENCE SILVER SIMPLE SINGLE SINGER SKETCH SOCKET SOLAR SOLUTION
+SOURCE SPARKLE SPEAKER SPIRIT SPOKEN STABLE STATION STEEL STORY STRANGE STRATEGY
+STREAM STRING STRONG STUDIO SUBMIT SUBTLE SUDDEN SUNSET SUPPLY SURFACE SYSTEM TABLET
+TALENT TARGET TEMPLE TENDER THEORY THRIVE TICKET TIMBER TOPIC TOTAL TRACKER TRAVEL
+TREASURE TRIGGER TUNNEL TURBINE UNION UNIVERSE UPDATE UPWARD USEFUL VACUUM VALID
+VALLEY VENTURE VERSION VICTORY VILLAGE VINTAGE VIOLET VISION VISUAL VOYAGE WALLET
+WEALTH WELCOME WINDOW WINTER WONDER WORKER WRITER YELLOW ZODIAC
+`.trim().split(/\s+/);
+
+const dailyMysteryPool = Array.from(
+  new Set(
+    [...dailyWordsRaw, ...WORD_CONNECT_SHORT_DICTIONARY, ...WORD_CONNECT_EXTRA_CHALLENGE_WORDS]
+      .map(normalizeWord)
+      .filter((word) => word.length === 5),
+  ),
+);
+
+const buildWordConnectLevels = () => {
+  const dictionary = Array.from(new Set(
+    [...WORD_CONNECT_SHORT_DICTIONARY, ...WORD_CONNECT_EXTRA_CHALLENGE_WORDS, ...dailyMysteryPool]
+      .map(normalizeWord)
+      .filter((word) => word.length >= 2 && word.length <= 8)
+  ));
+
+  const levelBySignature = new Map<string, {
+    letters: string[];
+    words: string[];
+    score: number;
+    difficulty: Difficulty;
+    hint: string;
+  }>();
+
+  const seedWords = dictionary.filter((word) => word.length >= 4 && word.length <= 8 && hasUniqueLetters(word));
+
+  for (const seed of seedWords) {
+    const letters = seed.split('');
+    const letterCount = letters.length;
+    const minWords = minWordsByLetterCount[letterCount] || 6;
+    const maxWords = capWordsByLetterCount[letterCount] || 12;
+
+    const buildableWords = dictionary
+      .filter((word) => word.length >= 2 && word.length <= letterCount)
+      .filter((word) => canBuildFromLetters(word, letters))
+      .sort((a, b) => b.length - a.length || a.localeCompare(b))
+      .slice(0, maxWords);
+
+    if (buildableWords.length < minWords) continue;
+
+    const difficulty = difficultyFromLevelShape(letterCount, buildableWords.length);
+    const signature = letters.slice().sort().join('');
+    const score = buildableWords.length * 10 + buildableWords.reduce((sum, word) => sum + word.length, 0);
+    const hint =
+      difficulty === Difficulty.EXPERT
+        ? 'Expert letter web: find all hidden words.'
+        : difficulty === Difficulty.HARD
+          ? 'Complex mix: discover every valid word.'
+          : difficulty === Difficulty.MEDIUM
+            ? 'Build as many words as possible from these letters.'
+            : 'Start with shorter words, then find the longest one.';
+
+    const existing = levelBySignature.get(signature);
+    if (!existing || score > existing.score) {
+      levelBySignature.set(signature, {
+        letters,
+        words: buildableWords,
+        score,
+        difficulty,
+        hint,
+      });
+    }
+  }
+
+  const byDifficulty = {
+    [Difficulty.EASY]: [] as Array<{ letters: string[]; words: string[]; score: number; difficulty: Difficulty; hint: string }>,
+    [Difficulty.MEDIUM]: [] as Array<{ letters: string[]; words: string[]; score: number; difficulty: Difficulty; hint: string }>,
+    [Difficulty.HARD]: [] as Array<{ letters: string[]; words: string[]; score: number; difficulty: Difficulty; hint: string }>,
+    [Difficulty.EXPERT]: [] as Array<{ letters: string[]; words: string[]; score: number; difficulty: Difficulty; hint: string }>,
+  };
+
+  for (const level of levelBySignature.values()) {
+    byDifficulty[level.difficulty].push(level);
+  }
+
+  byDifficulty[Difficulty.EASY].sort((a, b) => a.score - b.score);
+  byDifficulty[Difficulty.MEDIUM].sort((a, b) => a.score - b.score);
+  byDifficulty[Difficulty.HARD].sort((a, b) => b.score - a.score);
+  byDifficulty[Difficulty.EXPERT].sort((a, b) => b.score - a.score);
+
+  const targets = {
+    [Difficulty.EASY]: 120,
+    [Difficulty.MEDIUM]: 160,
+    [Difficulty.HARD]: 180,
+    [Difficulty.EXPERT]: 160,
+  };
+
+  const selected = [
+    ...byDifficulty[Difficulty.EASY].slice(0, targets[Difficulty.EASY]),
+    ...byDifficulty[Difficulty.MEDIUM].slice(0, targets[Difficulty.MEDIUM]),
+    ...byDifficulty[Difficulty.HARD].slice(0, targets[Difficulty.HARD]),
+    ...byDifficulty[Difficulty.EXPERT].slice(0, targets[Difficulty.EXPERT]),
+  ];
+
+  return selected.map((level, index) => ({
+    gameType: GameType.WORD_CONNECT,
+    level: index + 1,
+    difficulty: level.difficulty,
+    letters: level.letters,
+    words: level.words,
+    hint: level.hint,
+  }));
+};
+
+export const wordConnectLevels = buildWordConnectLevels();
+
+export const dailyMysteryWords = dailyMysteryPool.map((word, index) => ({
   gameType: GameType.DAILY_MYSTERY_WORD,
   level: index + 1,
   word: word.toUpperCase(),
-  difficulty: index < 100 ? Difficulty.EASY : index < 200 ? Difficulty.MEDIUM : Difficulty.HARD,
+  difficulty: (() => {
+    const ratio = (index + 1) / Math.max(1, dailyMysteryPool.length);
+    if (ratio <= 0.35) return Difficulty.EASY;
+    if (ratio <= 0.65) return Difficulty.MEDIUM;
+    if (ratio <= 0.9) return Difficulty.HARD;
+    return Difficulty.EXPERT;
+  })(),
 }));
 
 // ==========================================
 // PATTERN SPOTTER LEVELS (100+ patterns)
 // ==========================================
 function generatePatternLevels() {
-  const levels: any[] = [];
+  const levels: Array<{
+    gameType: GameType;
+    level: number;
+    difficulty: Difficulty;
+    sequence: number[];
+    answer: number;
+    options: number[];
+    patternType: string;
+  }> = [];
   let levelNum = 1;
 
-  // Arithmetic sequences (50 levels)
-  for (let i = 0; i < 50; i++) {
-    const start = Math.floor(Math.random() * 50) + 1;
-    const diff = Math.floor(Math.random() * 20) + 5;
+  const buildOptions = (answer: number, spread: number, rotateBy: number): number[] => {
+    const unique = Array.from(
+      new Set([
+        answer,
+        answer + spread,
+        answer - spread,
+        answer + spread * 2,
+      ]),
+    );
+
+    while (unique.length < 4) {
+      unique.push(answer + unique.length + 2);
+    }
+
+    const shift = ((rotateBy % unique.length) + unique.length) % unique.length;
+    return unique.slice(shift).concat(unique.slice(0, shift));
+  };
+
+  // Arithmetic progressions: 80 levels
+  for (let i = 0; i < 80; i++) {
+    const start = 6 + i;
+    const diff = 2 + (i % 11);
     const sequence = Array.from({ length: 4 }, (_, j) => start + diff * j);
     const answer = start + diff * 4;
-    const options = [answer, answer + Math.floor(diff/2), answer - Math.floor(diff/2), answer + diff].sort(() => Math.random() - 0.5);
-
     levels.push({
       gameType: GameType.PATTERN_SPOTTER,
       level: levelNum++,
-      difficulty: i < 15 ? Difficulty.EASY : i < 35 ? Difficulty.MEDIUM : Difficulty.HARD,
+      difficulty: i < 30 ? Difficulty.EASY : i < 60 ? Difficulty.MEDIUM : Difficulty.HARD,
       sequence,
       answer,
-      options,
+      options: buildOptions(answer, Math.max(2, Math.floor(diff / 2) + 1), i),
       patternType: 'arithmetic',
     });
   }
 
-  // Geometric sequences (30 levels)
-  for (let i = 0; i < 30; i++) {
-    const start = Math.floor(Math.random() * 5) + 1;
-    const ratio = Math.floor(Math.random() * 3) + 2;
+  // Geometric progressions: 50 levels
+  for (let i = 0; i < 50; i++) {
+    const start = 2 + (i % 7);
+    const ratio = 2 + (i % 3);
     const sequence = Array.from({ length: 4 }, (_, j) => start * Math.pow(ratio, j));
     const answer = start * Math.pow(ratio, 4);
-    const options = [answer, answer + ratio, answer - ratio, answer * 2].sort(() => Math.random() - 0.5);
-
     levels.push({
       gameType: GameType.PATTERN_SPOTTER,
       level: levelNum++,
-      difficulty: i < 10 ? Difficulty.MEDIUM : Difficulty.HARD,
+      difficulty: i < 15 ? Difficulty.MEDIUM : i < 35 ? Difficulty.HARD : Difficulty.EXPERT,
       sequence,
       answer,
-      options,
+      options: buildOptions(answer, Math.max(2, ratio * (i % 4 + 1)), i + 1),
       patternType: 'geometric',
     });
   }
 
-  // Square numbers (20 levels)
-  for (let i = 0; i < 20; i++) {
-    const start = Math.floor(Math.random() * 5) + 1;
-    const sequence = Array.from({ length: 4 }, (_, j) => (start + j) * (start + j));
-    const answer = (start + 4) * (start + 4);
-    const options = [answer, answer + 1, (start + 3) * (start + 3) + 2, answer - 2].sort(() => Math.random() - 0.5);
-
+  // Squares and near-squares: 40 levels
+  for (let i = 0; i < 40; i++) {
+    const start = 3 + i;
+    const sequence = Array.from({ length: 4 }, (_, j) => {
+      const n = start + j;
+      return n * n;
+    });
+    const next = start + 4;
+    const answer = next * next;
     levels.push({
       gameType: GameType.PATTERN_SPOTTER,
       level: levelNum++,
-      difficulty: Difficulty.HARD,
+      difficulty: i < 15 ? Difficulty.HARD : Difficulty.EXPERT,
       sequence,
       answer,
-      options,
+      options: buildOptions(answer, next + 3, i + 2),
       patternType: 'squares',
     });
   }
 
-  // Fibonacci-like (10 levels)
-  for (let i = 0; i < 10; i++) {
-    const a = Math.floor(Math.random() * 5) + 1;
-    const b = Math.floor(Math.random() * 5) + 1;
+  // Fibonacci-like mixed starts: 30 levels
+  for (let i = 0; i < 30; i++) {
+    const a = 1 + (i % 8);
+    const b = 2 + ((i * 2) % 9);
     const sequence = [a, b, a + b, a + 2 * b];
     const answer = 2 * a + 3 * b;
-    const options = [answer, answer + 1, answer - 1, answer + 2].sort(() => Math.random() - 0.5);
-
     levels.push({
       gameType: GameType.PATTERN_SPOTTER,
       level: levelNum++,
-      difficulty: Difficulty.EXPERT,
+      difficulty: i < 10 ? Difficulty.HARD : Difficulty.EXPERT,
       sequence,
       answer,
-      options,
+      options: buildOptions(answer, Math.max(2, a + b), i + 3),
       patternType: 'fibonacci',
     });
   }
@@ -269,7 +416,7 @@ function generatePatternLevels() {
 export const patternSpotterLevels = generatePatternLevels();
 
 // ==========================================
-// RIDDLE ARENA (100+ riddles for multiplayer)
+// RIDDLE ARENA (50 riddles for multiplayer)
 // ==========================================
 export const riddleArenaLevels = [
   { question: "What has hands but can't clap?", options: ['Clock', 'Gloves', 'Robot', 'Statue'], answer: 0, category: 'objects' },
@@ -333,101 +480,147 @@ export const riddleArenaLevels = [
 // SPEED MATH CONFIGURATIONS (for multiplayer)
 // ==========================================
 export const speedMathConfigs = [
-  // Easy: Single/Double digit addition/subtraction
-  ...Array.from({ length: 15 }, (_, i) => ({
+  // Easy fundamentals
+  ...Array.from({ length: 30 }, (_, i) => ({
     gameType: GameType.SPEED_MATH_DUEL,
     level: i + 1,
     difficulty: Difficulty.EASY,
-    minA: 10, maxA: 30,
-    minB: 10, maxB: 30,
+    minA: 8,
+    maxA: 45 + i,
+    minB: 5,
+    maxB: 30 + Math.floor(i / 2),
     operations: ['+', '-'],
   })),
-  // Medium: Double digit, includes multiplication
-  ...Array.from({ length: 15 }, (_, i) => ({
-    gameType: GameType.SPEED_MATH_DUEL,
-    level: i + 16,
-    difficulty: Difficulty.MEDIUM,
-    minA: 30, maxA: 100,
-    minB: 5, maxB: 25,
-    operations: ['+', '-', '*'],
-  })),
-  // Hard: Larger numbers, complex multiplication
-  ...Array.from({ length: 20 }, (_, i) => ({
+  // Medium: larger values and multiplication
+  ...Array.from({ length: 35 }, (_, i) => ({
     gameType: GameType.SPEED_MATH_DUEL,
     level: i + 31,
-    difficulty: Difficulty.HARD,
-    minA: 50, maxA: 200,
-    minB: 10, maxB: 50,
+    difficulty: Difficulty.MEDIUM,
+    minA: 30,
+    maxA: 140 + i * 2,
+    minB: 8,
+    maxB: 40 + Math.floor(i / 2),
     operations: ['+', '-', '*'],
+  })),
+  // Hard: larger ranges with division
+  ...Array.from({ length: 35 }, (_, i) => ({
+    gameType: GameType.SPEED_MATH_DUEL,
+    level: i + 66,
+    difficulty: Difficulty.HARD,
+    minA: 70,
+    maxA: 300 + i * 4,
+    minB: 10,
+    maxB: 60 + Math.floor(i / 2),
+    operations: ['+', '-', '*', '/'],
+  })),
+  // Expert: heavy arithmetic pressure
+  ...Array.from({ length: 20 }, (_, i) => ({
+    gameType: GameType.SPEED_MATH_DUEL,
+    level: i + 101,
+    difficulty: Difficulty.EXPERT,
+    minA: 120,
+    maxA: 480 + i * 8,
+    minB: 12,
+    maxB: 80 + Math.floor(i / 2),
+    operations: ['+', '-', '*', '/'],
   })),
 ];
 
 // ==========================================
 // MEMORY MATCH CONFIGS
 // ==========================================
-const memoryIcons = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍒', '🥝', '🍑', '🍌', '🥭', '🍍', '🥥', '🍆', '🥕', '🌽', '🥦', '🧄', '🧅', '🥔', '🍠', '🌶️', '🥒', '🥬', '🥑', '🍅', '🫑', '🫒', '🫐', '🫛', '🫚'];
+const memoryIcons = [
+  '\u{1F34E}', '\u{1F34A}', '\u{1F34B}', '\u{1F347}', '\u{1F353}', '\u{1F352}',
+  '\u{1F965}', '\u{1F351}', '\u{1F34C}', '\u{1F96D}', '\u{1F34D}', '\u{1F346}',
+  '\u{1F955}', '\u{1F33D}', '\u{1F966}', '\u{1F9C4}', '\u{1F9C5}', '\u{1F954}',
+  '\u{1F360}', '\u{1F336}', '\u{1F952}', '\u{1F96C}', '\u{1F951}', '\u{1F345}',
+  '\u{1FAD1}', '\u{1FAD2}', '\u{1FAD0}', '\u{1FADB}', '\u{1FADA}', '\u{1F344}',
+];
+
+const pickMemoryIcons = (start: number, count: number): string[] =>
+  Array.from({ length: count }, (_, index) => memoryIcons[(start + index) % memoryIcons.length]);
 
 export const memoryMatchConfigs = [
-  // Easy: 6 pairs (12 cards)
-  ...Array.from({ length: 15 }, (_, i) => ({
-    gameType: GameType.MEMORY_MATCH_BATTLE,
-    level: i + 1,
-    difficulty: Difficulty.EASY,
-    pairs: 6,
-    icons: memoryIcons.slice(0, 6),
-  })),
-  // Medium: 8 pairs (16 cards)
-  ...Array.from({ length: 15 }, (_, i) => ({
-    gameType: GameType.MEMORY_MATCH_BATTLE,
-    level: i + 16,
-    difficulty: Difficulty.MEDIUM,
-    pairs: 8,
-    icons: memoryIcons.slice(0, 8),
-  })),
-  // Hard: 12 pairs (24 cards)
-  ...Array.from({ length: 15 }, (_, i) => ({
-    gameType: GameType.MEMORY_MATCH_BATTLE,
-    level: i + 31,
-    difficulty: Difficulty.HARD,
-    pairs: 12,
-    icons: memoryIcons.slice(0, 12),
-  })),
-  // Expert: 15 pairs (30 cards)
-  ...Array.from({ length: 5 }, (_, i) => ({
-    gameType: GameType.MEMORY_MATCH_BATTLE,
-    level: i + 46,
-    difficulty: Difficulty.EXPERT,
-    pairs: 15,
-    icons: memoryIcons.slice(0, 15),
-  })),
+  // Easy: 6-7 pairs
+  ...Array.from({ length: 30 }, (_, i) => {
+    const pairs = 6 + Math.floor(i / 15);
+    return {
+      gameType: GameType.MEMORY_MATCH_BATTLE,
+      level: i + 1,
+      difficulty: Difficulty.EASY,
+      pairs,
+      icons: pickMemoryIcons(i, pairs),
+    };
+  }),
+  // Medium: 8-10 pairs
+  ...Array.from({ length: 35 }, (_, i) => {
+    const pairs = 8 + Math.floor(i / 12);
+    return {
+      gameType: GameType.MEMORY_MATCH_BATTLE,
+      level: i + 31,
+      difficulty: Difficulty.MEDIUM,
+      pairs,
+      icons: pickMemoryIcons(i + 5, pairs),
+    };
+  }),
+  // Hard: 11-14 pairs
+  ...Array.from({ length: 35 }, (_, i) => {
+    const pairs = 11 + Math.floor(i / 9);
+    return {
+      gameType: GameType.MEMORY_MATCH_BATTLE,
+      level: i + 66,
+      difficulty: Difficulty.HARD,
+      pairs,
+      icons: pickMemoryIcons(i + 9, pairs),
+    };
+  }),
+  // Expert: 15-18 pairs
+  ...Array.from({ length: 20 }, (_, i) => {
+    const pairs = 15 + Math.floor(i / 5);
+    return {
+      gameType: GameType.MEMORY_MATCH_BATTLE,
+      level: i + 101,
+      difficulty: Difficulty.EXPERT,
+      pairs,
+      icons: pickMemoryIcons(i + 13, pairs),
+    };
+  }),
 ];
 
 // ==========================================
 // MEMORY PATH CONFIGS
 // ==========================================
 export const memoryPathConfigs = [
-  // Easy: 4-5 cells
-  ...Array.from({ length: 20 }, (_, i) => ({
+  // Easy: short paths, smaller board
+  ...Array.from({ length: 30 }, (_, i) => ({
     gameType: GameType.MEMORY_PATH,
     level: i + 1,
     difficulty: Difficulty.EASY,
-    pathLength: 4 + Math.floor(i / 10),
+    pathLength: 4 + Math.floor(i / 6),
     gridSize: 4,
   })),
-  // Medium: 6-8 cells
-  ...Array.from({ length: 20 }, (_, i) => ({
+  // Medium: longer paths on 5x5
+  ...Array.from({ length: 35 }, (_, i) => ({
     gameType: GameType.MEMORY_PATH,
-    level: i + 21,
+    level: i + 31,
     difficulty: Difficulty.MEDIUM,
-    pathLength: 6 + Math.floor(i / 7),
+    pathLength: 7 + Math.floor(i / 5),
     gridSize: 5,
   })),
-  // Hard: 9-12 cells
-  ...Array.from({ length: 10 }, (_, i) => ({
+  // Hard: long paths on 6x6
+  ...Array.from({ length: 35 }, (_, i) => ({
     gameType: GameType.MEMORY_PATH,
-    level: i + 41,
+    level: i + 66,
     difficulty: Difficulty.HARD,
-    pathLength: 9 + Math.floor(i / 3),
+    pathLength: 11 + Math.floor(i / 4),
+    gridSize: 6,
+  })),
+  // Expert: maximum pressure
+  ...Array.from({ length: 20 }, (_, i) => ({
+    gameType: GameType.MEMORY_PATH,
+    level: i + 101,
+    difficulty: Difficulty.EXPERT,
+    pathLength: 20 + Math.floor(i / 2),
     gridSize: 6,
   })),
 ];
@@ -436,29 +629,37 @@ export const memoryPathConfigs = [
 // COLOR MEMORY CONFIGS
 // ==========================================
 export const colorMemoryConfigs = [
-  // Easy: 4 colors, longer sequences
-  ...Array.from({ length: 20 }, (_, i) => ({
+  // Easy: 4 colors, short sequences
+  ...Array.from({ length: 30 }, (_, i) => ({
     gameType: GameType.COLOR_MEMORY,
     level: i + 1,
     difficulty: Difficulty.EASY,
     colorCount: 4,
-    initialLength: 3 + Math.floor(i / 4),
+    initialLength: 3 + Math.floor(i / 5),
   })),
-  // Medium: 5-6 colors
+  // Medium: 5 colors
+  ...Array.from({ length: 35 }, (_, i) => ({
+    gameType: GameType.COLOR_MEMORY,
+    level: i + 31,
+    difficulty: Difficulty.MEDIUM,
+    colorCount: 5,
+    initialLength: 6 + Math.floor(i / 5),
+  })),
+  // Hard: 6 colors
+  ...Array.from({ length: 35 }, (_, i) => ({
+    gameType: GameType.COLOR_MEMORY,
+    level: i + 66,
+    difficulty: Difficulty.HARD,
+    colorCount: 6,
+    initialLength: 10 + Math.floor(i / 4),
+  })),
+  // Expert: very long sequences
   ...Array.from({ length: 20 }, (_, i) => ({
     gameType: GameType.COLOR_MEMORY,
-    level: i + 21,
-    difficulty: Difficulty.MEDIUM,
-    colorCount: 5 + Math.floor(Math.random() * 2),
-    initialLength: 5 + Math.floor(i / 4),
-  })),
-  // Hard: 8 colors, complex sequences
-  ...Array.from({ length: 10 }, (_, i) => ({
-    gameType: GameType.COLOR_MEMORY,
-    level: i + 41,
-    difficulty: Difficulty.HARD,
-    colorCount: 8,
-    initialLength: 7 + Math.floor(i / 3),
+    level: i + 101,
+    difficulty: Difficulty.EXPERT,
+    colorCount: 6,
+    initialLength: 19 + Math.floor(i / 2),
   })),
 ];
 
@@ -466,29 +667,37 @@ export const colorMemoryConfigs = [
 // NUMBER PYRAMID CONFIGS
 // ==========================================
 export const numberPyramidConfigs = [
-  // Easy: 4 rows, higher numbers
-  ...Array.from({ length: 20 }, (_, i) => ({
+  // Easy: 4 rows
+  ...Array.from({ length: 30 }, (_, i) => ({
     gameType: GameType.NUMBER_PYRAMID,
     level: i + 1,
     difficulty: Difficulty.EASY,
     rows: 4,
-    maxBaseNumber: 8 + Math.floor(i / 3),
+    maxBaseNumber: 8 + Math.floor(i / 4),
   })),
   // Medium: 5 rows
-  ...Array.from({ length: 20 }, (_, i) => ({
+  ...Array.from({ length: 35 }, (_, i) => ({
     gameType: GameType.NUMBER_PYRAMID,
-    level: i + 21,
+    level: i + 31,
     difficulty: Difficulty.MEDIUM,
     rows: 5,
-    maxBaseNumber: 10 + Math.floor(i / 3),
+    maxBaseNumber: 12 + Math.floor(i / 3),
   })),
   // Hard: 6 rows
-  ...Array.from({ length: 10 }, (_, i) => ({
+  ...Array.from({ length: 35 }, (_, i) => ({
     gameType: GameType.NUMBER_PYRAMID,
-    level: i + 41,
+    level: i + 66,
     difficulty: Difficulty.HARD,
     rows: 6,
-    maxBaseNumber: 12 + Math.floor(i / 3),
+    maxBaseNumber: 17 + Math.floor(i / 3),
+  })),
+  // Expert: 7 rows
+  ...Array.from({ length: 20 }, (_, i) => ({
+    gameType: GameType.NUMBER_PYRAMID,
+    level: i + 101,
+    difficulty: Difficulty.EXPERT,
+    rows: 7,
+    maxBaseNumber: 24 + Math.floor(i / 2),
   })),
 ];
 
@@ -496,32 +705,39 @@ export const numberPyramidConfigs = [
 // SLIDING PUZZLE CONFIGS
 // ==========================================
 export const slidingPuzzleConfigs = [
-  // Easy: 3x3, more chaos
-  ...Array.from({ length: 10 }, (_, i) => ({
+  // Easy: 3x3
+  ...Array.from({ length: 25 }, (_, i) => ({
     gameType: GameType.SLIDING_PUZZLE,
     level: i + 1,
     difficulty: Difficulty.EASY,
     gridSize: 3,
-    shuffleMoves: 100 + i * 20,
+    shuffleMoves: 80 + i * 12,
   })),
   // Medium: 4x4
-  ...Array.from({ length: 10 }, (_, i) => ({
+  ...Array.from({ length: 30 }, (_, i) => ({
     gameType: GameType.SLIDING_PUZZLE,
-    level: i + 11,
+    level: i + 26,
     difficulty: Difficulty.MEDIUM,
     gridSize: 4,
-    shuffleMoves: 200 + i * 30,
+    shuffleMoves: 220 + i * 18,
   })),
   // Hard: 5x5
-  ...Array.from({ length: 10 }, (_, i) => ({
+  ...Array.from({ length: 30 }, (_, i) => ({
     gameType: GameType.SLIDING_PUZZLE,
-    level: i + 21,
+    level: i + 56,
     difficulty: Difficulty.HARD,
     gridSize: 5,
-    shuffleMoves: 400 + i * 50,
+    shuffleMoves: 520 + i * 24,
+  })),
+  // Expert: 6x6
+  ...Array.from({ length: 20 }, (_, i) => ({
+    gameType: GameType.SLIDING_PUZZLE,
+    level: i + 86,
+    difficulty: Difficulty.EXPERT,
+    gridSize: 6,
+    shuffleMoves: 950 + i * 35,
   })),
 ];
-
 // ==========================================
 // COMBINE ALL LEVELS
 // ==========================================
@@ -537,3 +753,4 @@ export const allGameLevels = [
   ...numberPyramidConfigs,
   ...slidingPuzzleConfigs,
 ];
+

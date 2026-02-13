@@ -10,28 +10,78 @@ import { useAuth } from '@/lib/auth-context';
 import { GameType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Lightbulb, RotateCcw, Sparkles, Trophy } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-interface Level {
+type WordConnectLevel = {
   letters: string[];
   words: string[];
   hint: string;
-}
+};
 
-const LEVELS: Level[] = [
-  { letters: ['D', 'O', 'G'], words: ['DOG', 'GOD', 'DO', 'GO'], hint: 'Man\'s best friend' },
-  { letters: ['C', 'A', 'T', 'S'], words: ['CAT', 'CATS', 'SAT', 'ACT', 'ACTS', 'CAST'], hint: 'Furry pets' },
-  { letters: ['W', 'O', 'R', 'D'], words: ['WORD', 'ROW', 'ROD', 'OWN', 'WORN', 'DOWN'], hint: 'What you read' },
-  { letters: ['T', 'I', 'M', 'E'], words: ['TIME', 'ITEM', 'EMIT', 'MITE', 'TIE', 'MET'], hint: 'Clock shows this' },
+const FALLBACK_LEVELS: WordConnectLevel[] = [
+  { letters: ['D', 'O', 'G'], words: ['DOG', 'GOD', 'DO', 'GO'], hint: "Man's best friend" },
+  { letters: ['C', 'A', 'T', 'S'], words: ['CAST', 'CATS', 'ACTS', 'CAT', 'ACT', 'SAT'], hint: 'Furry pets' },
+  { letters: ['W', 'O', 'R', 'D'], words: ['WORD', 'ROW', 'ROD', 'DO', 'OR'], hint: 'What you read' },
+  { letters: ['T', 'I', 'M', 'E'], words: ['TIME', 'ITEM', 'TIE', 'MET', 'EMIT'], hint: 'Clock shows this' },
   { letters: ['P', 'L', 'A', 'Y'], words: ['PLAY', 'PAL', 'LAY', 'PAY', 'LAP'], hint: 'What kids do' },
   { letters: ['S', 'T', 'A', 'R'], words: ['STAR', 'RATS', 'ARTS', 'TAR', 'SAT', 'RAT'], hint: 'Twinkle twinkle' },
-  { letters: ['H', 'O', 'M', 'E'], words: ['HOME', 'HEM', 'HOE', 'MOE'], hint: 'Where you live' },
+  { letters: ['H', 'O', 'M', 'E'], words: ['HOME', 'HEM', 'HOE'], hint: 'Where you live' },
   { letters: ['L', 'I', 'G', 'H', 'T'], words: ['LIGHT', 'GILT', 'HILT', 'HIT', 'LIT'], hint: 'Opposite of dark' },
 ];
 
+const normalizeToken = (value: string): string => value.toUpperCase().replace(/[^A-Z]/g, '');
+
+const canBuildWord = (word: string, letters: string[]): boolean => {
+  const pool = new Map<string, number>();
+  for (const letter of letters) {
+    pool.set(letter, (pool.get(letter) || 0) + 1);
+  }
+
+  for (const char of word) {
+    const remaining = pool.get(char) || 0;
+    if (remaining <= 0) return false;
+    pool.set(char, remaining - 1);
+  }
+
+  return true;
+};
+
+const sanitizeLevel = (raw: unknown): WordConnectLevel | null => {
+  const source = raw as { letters?: unknown[]; words?: unknown[]; hint?: unknown };
+
+  const letters: string[] = Array.isArray(source.letters)
+    ? source.letters.map((value) => normalizeToken(String(value))).filter((token) => token.length === 1)
+    : [];
+
+  const uniqueLetters: string[] = Array.from(new Set<string>(letters));
+  if (uniqueLetters.length < 3 || uniqueLetters.length !== letters.length) return null;
+
+  const words: string[] = Array.isArray(source.words)
+    ? source.words
+        .map((value) => normalizeToken(String(value)))
+        .filter((word) => word.length >= 2)
+        .filter((word) => canBuildWord(word, uniqueLetters))
+    : [];
+
+  const uniqueWords: string[] = Array.from(new Set<string>(words)).sort(
+    (a, b) => b.length - a.length || a.localeCompare(b),
+  );
+  if (uniqueWords.length < 3) return null;
+
+  return {
+    letters: uniqueLetters,
+    words: uniqueWords,
+    hint: typeof source.hint === 'string' && source.hint.trim().length
+      ? source.hint.trim()
+      : 'Find all valid words from these letters.',
+  };
+};
+
 export default function WordConnectPage() {
   const { user } = useAuth();
+  const [levels, setLevels] = useState<WordConnectLevel[]>(FALLBACK_LEVELS);
+  const [levelsLoaded, setLevelsLoaded] = useState(false);
   const [currentLevel, setCurrentLevel] = useState(0);
   const [selectedLetters, setSelectedLetters] = useState<number[]>([]);
   const [foundWords, setFoundWords] = useState<string[]>([]);
@@ -42,21 +92,67 @@ export default function WordConnectPage() {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (user) {
-      // Load progress
-      if (user.progress?.[GameType.WORD_CONNECT]) {
-        const savedLevel = user.progress[GameType.WORD_CONNECT];
-        setCurrentLevel(current => Math.max(current, Math.min(savedLevel, LEVELS.length - 1)));
-      }
+  const userIdentity = user as ({ id?: string; _id?: string } | null);
+  const userId = String(userIdentity?.id ?? userIdentity?._id ?? 'guest');
+  const storageKey = useMemo(() => `mirana_level_word_connect_${userId}`, [userId]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLevels = async () => {
+      try {
+        const backendLevels = await api.getGameLevels(GameType.WORD_CONNECT, undefined, 2000);
+        const parsed = backendLevels
+          .map((level) => sanitizeLevel(level))
+          .filter((level): level is WordConnectLevel => Boolean(level));
+
+        if (!cancelled && parsed.length > 0) {
+          setLevels(parsed);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        if (!cancelled) {
+          setLevelsLoaded(true);
+        }
+      }
+    };
+
+    void loadLevels();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (levels.length === 0) return;
+
+    const localLevel = Number.parseInt(localStorage.getItem(storageKey) || '1', 10);
+    const safeLocalLevel = Number.isFinite(localLevel) && localLevel > 0 ? localLevel : 1;
+    const serverLevel = (user?.progress?.[GameType.WORD_CONNECT] || 0) + 1;
+    const resumeLevel = Math.min(Math.max(safeLocalLevel, serverLevel), levels.length);
+
+    setCurrentLevel(resumeLevel - 1);
+
+    if (user) {
       api.getBestScore(GameType.WORD_CONNECT)
         .then(({ bestScore }) => setBestScore(bestScore))
         .catch(console.error);
     }
-  }, [user]);
+  }, [levels.length, storageKey, user]);
 
-  const level = LEVELS[currentLevel];
+  useEffect(() => {
+    if (levels.length === 0) return;
+    localStorage.setItem(storageKey, String(currentLevel + 1));
+  }, [currentLevel, levels.length, storageKey]);
+
+  useEffect(() => {
+    if (levels.length === 0) return;
+    setCurrentLevel((value) => Math.min(value, levels.length - 1));
+  }, [levels.length]);
+
+  const level = levels[currentLevel] || FALLBACK_LEVELS[0];
   const letters = level.letters;
   const centerX = 120;
   const centerY = 120;
@@ -78,32 +174,33 @@ export default function WordConnectPage() {
 
   const handleLetterEnter = (index: number) => {
     if (!isDragging) return;
+
     if (selectedLetters.includes(index)) {
-      // If going back, remove letters after this index
       const existingIndex = selectedLetters.indexOf(index);
       if (existingIndex < selectedLetters.length - 1) {
         const newSelected = selectedLetters.slice(0, existingIndex + 1);
         setSelectedLetters(newSelected);
-        setCurrentWord(newSelected.map(i => letters[i]).join(''));
+        setCurrentWord(newSelected.map((letterIndex) => letters[letterIndex]).join(''));
       }
       return;
     }
+
     setSelectedLetters([...selectedLetters, index]);
-    setCurrentWord(prev => prev + letters[index]);
+    setCurrentWord((prev) => prev + letters[index]);
   };
 
   const handleDragEnd = useCallback(() => {
     if (!isDragging) return;
+
     setIsDragging(false);
 
     const word = currentWord.toUpperCase();
     if (word.length >= 2 && level.words.includes(word) && !foundWords.includes(word)) {
       setFoundWords([...foundWords, word]);
       const wordScore = word.length * 10;
-      setScore(s => s + wordScore);
+      setScore((value) => value + wordScore);
       toast.success(`+${wordScore} points!`);
 
-      // Check if level complete
       if (foundWords.length + 1 >= level.words.length) {
         setTimeout(() => {
           const finishedLevel = currentLevel + 1;
@@ -117,19 +214,16 @@ export default function WordConnectPage() {
             }).catch(console.error);
           }
 
-          if (currentLevel < LEVELS.length - 1) {
-            toast.success('Level Complete! 🎉');
-            setCurrentLevel(l => l + 1);
+          if (currentLevel < levels.length - 1) {
+            toast.success('Level Complete!');
+            setCurrentLevel((value) => value + 1);
             setFoundWords([]);
             setShowHint(false);
           } else {
-            // Game complete
             const finalScore = levelScore + 100;
             toast.success(`All levels complete! Final score: ${finalScore}`);
-            if (user) {
-              if (!bestScore || finalScore > bestScore) {
-                setBestScore(finalScore);
-              }
+            if (!bestScore || finalScore > bestScore) {
+              setBestScore(finalScore);
             }
           }
         }, 500);
@@ -138,7 +232,7 @@ export default function WordConnectPage() {
 
     setSelectedLetters([]);
     setCurrentWord('');
-  }, [isDragging, currentWord, level.words, foundWords, currentLevel, score, user, bestScore]);
+  }, [bestScore, currentLevel, currentWord, foundWords, isDragging, level.words, levels.length, score, user]);
 
   const resetGame = () => {
     setCurrentLevel(0);
@@ -149,12 +243,25 @@ export default function WordConnectPage() {
     setCurrentWord('');
   };
 
-  // Draw line between selected letters
   const getLinePath = () => {
     if (selectedLetters.length < 2) return '';
-    const points = selectedLetters.map(i => getLetterPosition(i));
-    return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const points = selectedLetters.map((index) => getLetterPosition(index));
+    return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
   };
+
+  if (!levelsLoaded) {
+    return (
+      <div className="min-h-screen px-4 py-8">
+        <div className="max-w-lg mx-auto">
+          <Card>
+            <CardContent className="py-16 text-center text-muted-foreground">
+              Loading levels...
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-4 py-8">
@@ -167,7 +274,9 @@ export default function WordConnectPage() {
                 Word Connect
               </CardTitle>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">Level {currentLevel + 1}</Badge>
+                <Badge variant="secondary">
+                  Level {currentLevel + 1}/{levels.length}
+                </Badge>
                 {bestScore !== null && (
                   <Badge variant="outline">
                     <Trophy className="h-3 w-3 mr-1 text-amber-500" />
@@ -178,37 +287,33 @@ export default function WordConnectPage() {
                   title="Word Connect"
                   description="Connect letters to form words and complete the level."
                   rules={[
-                    "Swipe to connect letters in the circle to form words.",
-                    "Find all hidden words to complete the level.",
-                    "Words can be formed in any order.",
-                    "Find extra words for bonus points!",
+                    'Swipe to connect letters in the circle to form words.',
+                    'Find all hidden words to complete the level.',
+                    'Words can be formed in any order.',
+                    'Find extra words for bonus points!',
                   ]}
                   controls={[
-                    "Click/Touch and drag to connect letters.",
-                    "Release to submit the word.",
+                    'Click/Touch and drag to connect letters.',
+                    'Release to submit the word.',
                   ]}
                 />
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Score */}
             <div className="text-center">
               <p className="text-3xl font-bold">{score}</p>
               <p className="text-sm text-muted-foreground">Score</p>
             </div>
 
-            {/* Word Display Grid */}
             <div className="bg-muted rounded-lg p-4">
               <div className="flex flex-wrap gap-2 justify-center min-h-[60px]">
-                {level.words.map((word, i) => (
+                {level.words.map((word, index) => (
                   <div
-                    key={i}
+                    key={index}
                     className={cn(
                       'px-3 py-2 rounded-lg font-bold text-sm transition-all',
-                      foundWords.includes(word)
-                        ? 'bg-green-500 text-white'
-                        : 'bg-muted-foreground/20 text-transparent'
+                      foundWords.includes(word) ? 'bg-green-500 text-white' : 'bg-muted-foreground/20 text-transparent',
                     )}
                   >
                     {foundWords.includes(word) ? word : word.replace(/./g, '_')}
@@ -220,47 +325,38 @@ export default function WordConnectPage() {
               </p>
             </div>
 
-            {/* Current Input */}
             <div className="h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-              <span className="text-2xl font-bold text-primary tracking-widest">
-                {currentWord || '\u00A0'}
-              </span>
+              <span className="text-2xl font-bold text-primary tracking-widest">{currentWord || '\u00A0'}</span>
             </div>
 
-            {/* Letter Circle */}
             <div
               ref={containerRef}
               className="relative mx-auto touch-none"
               style={{ width: 240, height: 240 }}
               onMouseUp={handleDragEnd}
               onMouseLeave={handleDragEnd}
-              onTouchEnd={(e) => {
-                e.preventDefault();
+              onTouchEnd={(event) => {
+                event.preventDefault();
                 handleDragEnd();
               }}
-              onTouchMove={(e) => {
-                e.preventDefault();
+              onTouchMove={(event) => {
+                event.preventDefault();
                 if (!isDragging || !containerRef.current) return;
 
-                const touch = e.touches[0];
+                const touch = event.touches[0];
                 const rect = containerRef.current.getBoundingClientRect();
                 const x = touch.clientX - rect.left;
                 const y = touch.clientY - rect.top;
 
-                // Check distance to each letter center
                 letters.forEach((_, index) => {
                   const pos = getLetterPosition(index);
-                  // Letter button radius approx 28px (w-14 = 3.5rem = 56px => r=28)
-                  // Give a bit more hit area (40px radius)
                   const dist = Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2));
-
                   if (dist < 40) {
                     handleLetterEnter(index);
                   }
                 });
               }}
             >
-              {/* SVG for connection lines */}
               <svg className="absolute inset-0 pointer-events-none" width="240" height="240">
                 <path
                   d={getLinePath()}
@@ -271,10 +367,8 @@ export default function WordConnectPage() {
                 />
               </svg>
 
-              {/* Center decoration */}
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/30" />
 
-              {/* Letters */}
               {letters.map((letter, index) => {
                 const pos = getLetterPosition(index);
                 const isSelected = selectedLetters.includes(index);
@@ -284,15 +378,13 @@ export default function WordConnectPage() {
                     data-index={index}
                     className={cn(
                       'absolute w-14 h-14 rounded-full font-bold text-xl transition-all -translate-x-1/2 -translate-y-1/2 touch-none select-none',
-                      isSelected
-                        ? 'bg-primary text-primary-foreground scale-110'
-                        : 'bg-muted hover:bg-muted-foreground/20'
+                      isSelected ? 'bg-primary text-primary-foreground scale-110' : 'bg-muted hover:bg-muted-foreground/20',
                     )}
                     style={{ left: pos.x, top: pos.y }}
                     onMouseDown={() => handleLetterStart(index)}
                     onMouseEnter={() => handleLetterEnter(index)}
-                    onTouchStart={(e) => {
-                      e.preventDefault(); // Prevent scrolling
+                    onTouchStart={(event) => {
+                      event.preventDefault();
                       handleLetterStart(index);
                     }}
                   >
@@ -302,21 +394,16 @@ export default function WordConnectPage() {
               })}
             </div>
 
-            {/* Hint */}
             {showHint && (
               <div className="text-center p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                <p className="text-sm"><strong>Hint:</strong> {level.hint}</p>
+                <p className="text-sm">
+                  <strong>Hint:</strong> {level.hint}
+                </p>
               </div>
             )}
 
-            {/* Controls */}
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setShowHint(true)}
-                disabled={showHint}
-              >
+              <Button variant="outline" className="flex-1" onClick={() => setShowHint(true)} disabled={showHint}>
                 <Lightbulb className="h-4 w-4 mr-2" />
                 Hint
               </Button>

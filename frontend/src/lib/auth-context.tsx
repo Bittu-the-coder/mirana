@@ -29,11 +29,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       api.getMe()
         .then(setUser)
         .catch((err) => {
-          // Clear invalid token
-          localStorage.removeItem('token');
-          // Don't show error toast on initial load
           if (err instanceof AuthenticationError) {
-            // Token expired, silently clear
+            // Invalid/expired token, clear session silently
+            api.logout();
+          } else {
+            // Keep token on transient errors (offline/server) so session can recover
+            console.error('Failed to restore session:', err);
           }
         })
         .finally(() => setLoading(false));

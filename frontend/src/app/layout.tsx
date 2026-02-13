@@ -1,4 +1,5 @@
 import { Navigation } from "@/components/navigation";
+import { PwaInstaller } from "@/components/pwa-installer";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth-context";
 import { SocketProvider } from "@/lib/socket-context";
@@ -161,8 +162,14 @@ export const metadata: Metadata = {
     ],
   },
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Mirana",
+    statusBarStyle: "black-translucent",
+  },
   other: {
     "google-site-verification": "google-verification-code",
+    "mobile-web-app-capable": "yes",
   },
 };
 
@@ -214,6 +221,7 @@ export default function RootLayout({
             <main className="pb-20 md:pb-0 md:pl-64">
               {children}
             </main>
+            <PwaInstaller />
             <Toaster />
           </SocketProvider>
         </AuthProvider>

@@ -13,10 +13,17 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'dev-secret',
-        signOptions: { expiresIn: 60 * 60 * 24 * 7 }, // 7 days in seconds
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const configuredExpiry = configService.get<string>('JWT_EXPIRES_IN') || '180d';
+        const expiresIn = (/^\d+$/.test(configuredExpiry)
+          ? Number(configuredExpiry)
+          : configuredExpiry) as any;
+
+        return {
+          secret: configService.get<string>('JWT_SECRET') || 'dev-secret',
+          signOptions: { expiresIn },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

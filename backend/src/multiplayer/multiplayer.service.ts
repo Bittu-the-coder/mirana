@@ -41,6 +41,15 @@ export class MultiplayerService {
   private waitingPlayers: Map<GameType, { userId: string; username: string; socketId: string }[]> = new Map();
   private inviteCodes: Map<string, string> = new Map(); // inviteCode -> roomId
 
+  private shuffle<T>(items: T[]): T[] {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+
   generateRoomId(): string {
     return `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -253,22 +262,42 @@ export class MultiplayerService {
     if (!room) return [];
 
     if (room.gameType === GameType.SPEED_MATH_DUEL) {
-      const ops = ['+', '-', '*'];
+      const questionCount = Math.max(1, room.settings.questionCount);
       const questions: Question[] = [];
 
-      for (let i = 0; i < room.settings.questionCount; i++) {
-        const op = ops[Math.floor(Math.random() * ops.length)];
-        let a = Math.floor(Math.random() * 20) + 1;
-        let b = Math.floor(Math.random() * 12) + 1;
+      for (let i = 0; i < questionCount; i++) {
+        const progress = i / Math.max(1, questionCount - 1);
+        const tier = progress < 0.3 ? 0 : progress < 0.6 ? 1 : progress < 0.85 ? 2 : 3;
+        const opsByTier = [
+          ['+', '-'],
+          ['+', '-', '*'],
+          ['+', '-', '*'],
+          ['+', '-', '*', '/'],
+        ] as const;
+        const op = opsByTier[tier][Math.floor(Math.random() * opsByTier[tier].length)];
 
-        if (op === '-' && b > a) [a, b] = [b, a];
+        const maxAByTier = [20, 40, 80, 120];
+        const maxBByTier = [15, 20, 25, 30];
+        let a = Math.floor(Math.random() * maxAByTier[tier]) + 1;
+        let b = Math.floor(Math.random() * maxBByTier[tier]) + 1;
+        let answer = 0;
 
-        let answer: number;
-        switch (op) {
-          case '+': answer = a + b; break;
-          case '-': answer = a - b; break;
-          case '*': answer = a * b; break;
-          default: answer = a + b;
+        if (op === '+') {
+          answer = a + b;
+        } else if (op === '-') {
+          if (b > a) [a, b] = [b, a];
+          answer = a - b;
+        } else if (op === '*') {
+          const minFactor = tier >= 2 ? 4 : 2;
+          const maxFactor = tier >= 2 ? 16 : 12;
+          a = Math.floor(Math.random() * (maxFactor - minFactor + 1)) + minFactor;
+          b = Math.floor(Math.random() * (maxFactor - minFactor + 1)) + minFactor;
+          answer = a * b;
+        } else {
+          // Division with guaranteed integer answers
+          b = Math.floor(Math.random() * 10) + 2;
+          answer = Math.floor(Math.random() * (tier >= 3 ? 16 : 10)) + 2;
+          a = answer * b;
         }
 
         questions.push({ id: i, a, b, op, answer });
@@ -276,25 +305,17 @@ export class MultiplayerService {
       room.questions = questions;
       return questions;
     } else if (room.gameType === GameType.RIDDLE_ARENA) {
-        // Pick random riddles
-        const shuffled = [...riddleArenaLevels].sort(() => 0.5 - Math.random());
+        const shuffled = this.shuffle(riddleArenaLevels);
         const selected = shuffled.slice(0, room.settings.questionCount);
-        // Map to simpler format if needed, or send full object
-        // We'll send the full object but client needs to handle it.
-        // For consistency in type, we might need to adjust the Question interface or use `any` for questions
         room.questions = selected as any;
         return selected;
     } else if (room.gameType === GameType.MEMORY_MATCH_BATTLE) {
-        // Generate memory board
-        // For multiplayer, we need a shared board.
-        // Level logic: use settings to determine size? Default to level 1 config for now
-        const config = memoryMatchConfigs[0]; // Simple start
-        const cards = [...config.icons, ...config.icons]
-            .sort(() => 0.5 - Math.random())
+        const targetPairs = room.settings.questionCount >= 15 ? 12 : room.settings.questionCount >= 10 ? 8 : 6;
+        const allIcons = Array.from(new Set(memoryMatchConfigs.flatMap(config => config.icons)));
+        const selectedIcons = this.shuffle(allIcons).slice(0, targetPairs);
+        const cards = this.shuffle([...selectedIcons, ...selectedIcons])
             .map((icon, idx) => ({ id: idx, icon, matched: false }));
 
-        // This is a bit different as it's state, not a list of questions to answer sequentially.
-        // But for "questions" we can send the layout.
         room.questions = cards as any;
         return cards;
     }
@@ -311,7 +332,21 @@ export class MultiplayerService {
     if (player) {
       player.finished = true;
       player.answers = answers;
-      player.score = answers.filter(a => a.correct).length * 10;
+      const correctAnswers = answers.filter(a => a.correct).length;
+
+      if (room.gameType === GameType.MEMORY_MATCH_BATTLE) {
+        if (answers.length === 0) {
+          player.score = 0;
+          return room;
+        }
+
+        const wrongAnswers = Math.max(0, answers.length - correctAnswers);
+        const totalTimeMs = answers.reduce((sum, answer) => sum + answer.timeMs, 0);
+        const timeBonus = Math.max(0, 120 - Math.floor(totalTimeMs / 1000));
+        player.score = Math.max(0, correctAnswers * 20 - wrongAnswers * 5 + timeBonus);
+      } else {
+        player.score = correctAnswers * 10;
+      }
     }
 
     return room;

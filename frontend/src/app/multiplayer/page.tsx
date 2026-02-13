@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/lib/auth-context';
 import { GameResult, GameSettings, Question, useSocket } from '@/lib/socket-context';
-import { GameType } from '@/lib/types';
+import { GameRoom, GameType, RoomPlayer } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import {
   Calculator,
@@ -28,7 +28,7 @@ import {
   Zap
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const multiplayerGames = [
@@ -57,6 +57,30 @@ const multiplayerGames = [
     players: '2 Players',
   },
 ];
+
+const normalizeId = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  return typeof value === 'string' ? value : String(value);
+};
+
+type GameAnswer = {
+  questionId: number;
+  answer: number;
+  correct: boolean;
+  timeMs: number;
+};
+
+type MemoryCard = {
+  id: number;
+  icon: string;
+  matched?: boolean;
+};
+
+type RiddleQuestion = {
+  question: string;
+  options?: string[];
+  answer: number;
+};
 
 // Game Settings Component
 function GameSettingsPanel({
@@ -126,54 +150,34 @@ function GameSettingsPanel({
 function SpeedMathGame({
   questions,
   settings,
-  userId,
   onFinish,
 }: {
   questions: Question[];
   settings: GameSettings;
-  userId: string;
-  onFinish: (answers: { questionId: number; answer: number; correct: boolean; timeMs: number }[]) => void;
+  onFinish: (answers: GameAnswer[]) => void;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
-  const [answers, setAnswers] = useState<{ questionId: number; answer: number; correct: boolean; timeMs: number }[]>([]);
+  const [answers, setAnswers] = useState<GameAnswer[]>([]);
   const [timeLeft, setTimeLeft] = useState(settings.timePerQuestion);
-  const [startTime, setStartTime] = useState(Date.now());
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const currentQuestion = questions[currentIndex];
 
   useEffect(() => {
-    setStartTime(Date.now());
-    setTimeLeft(settings.timePerQuestion);
-    setUserAnswer('');
-    setFeedback(null);
-    // Refocus input on new question
-    setTimeout(() => inputRef.current?.focus(), 50);
-  }, [currentIndex, settings.timePerQuestion]);
+    const focusTimer = setTimeout(() => inputRef.current?.focus(), 50);
+    return () => clearTimeout(focusTimer);
+  }, [currentIndex]);
 
-  useEffect(() => {
-    if (timeLeft <= 0) {
-      handleSubmit(true);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setTimeLeft(t => t - 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeLeft]);
-
-  const handleSubmit = (timeout = false) => {
-    const timeMs = Date.now() - startTime;
-    const answerNum = timeout ? -1 : parseInt(userAnswer);
+  const handleSubmit = useCallback((timeout = false) => {
+    const timeMs = Math.max(0, Math.round((settings.timePerQuestion - timeLeft) * 1000));
+    const answerNum = timeout ? -1 : parseInt(userAnswer, 10);
     const correct = !timeout && answerNum === currentQuestion.answer;
 
     setFeedback(correct ? 'correct' : 'wrong');
 
-    const newAnswer = {
+    const newAnswer: GameAnswer = {
       questionId: currentQuestion.id,
       answer: answerNum,
       correct,
@@ -188,9 +192,31 @@ function SpeedMathGame({
         onFinish(updatedAnswers);
       } else {
         setCurrentIndex(i => i + 1);
+        setTimeLeft(settings.timePerQuestion);
+        setUserAnswer('');
+        setFeedback(null);
       }
     }, 800);
-  };
+  }, [answers, currentIndex, currentQuestion.answer, currentQuestion.id, onFinish, questions.length, settings.timePerQuestion, timeLeft, userAnswer]);
+
+  useEffect(() => {
+    if (feedback !== null) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          clearInterval(timer);
+          handleSubmit(true);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [currentIndex, feedback, handleSubmit]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,26 +264,42 @@ function SpeedMathGame({
 
 // Memory Match Game Component
 function MemoryBattleGame({
-  questions, // Reusing questions prop for cards
-  settings,
-  userId,
+  questions,
   onFinish,
 }: {
-  questions: any[];
-  settings: GameSettings;
-  userId: string;
-  onFinish: (answers: any[]) => void;
+  questions: MemoryCard[];
+  onFinish: (answers: GameAnswer[]) => void;
 }) {
-    const [cards, setCards] = useState<any[]>(questions);
+    const cards = questions;
     const [flipped, setFlipped] = useState<number[]>([]);
     const [matched, setMatched] = useState<number[]>([]);
-    const [startTime] = useState(Date.now());
+    const [attempts, setAttempts] = useState<GameAnswer[]>([]);
+    const submittedRef = useRef(false);
+    const lastAttemptStartedAt = useRef<number>(0);
+
+    useEffect(() => {
+        lastAttemptStartedAt.current = Date.now();
+    }, []);
 
     // Effect to check matches
     useEffect(() => {
         if (flipped.length === 2) {
             const [first, second] = flipped;
-            if (cards[first].icon === cards[second].icon) {
+            const isCorrect = cards[first].icon === cards[second].icon;
+            const now = Date.now();
+
+            setAttempts(prev => [
+              ...prev,
+              {
+                questionId: prev.length,
+                answer: isCorrect ? 1 : 0,
+                correct: isCorrect,
+                timeMs: now - lastAttemptStartedAt.current,
+              },
+            ]);
+            lastAttemptStartedAt.current = now;
+
+            if (isCorrect) {
                 setMatched(prev => [...prev, first, second]);
                 setFlipped([]);
             } else {
@@ -267,14 +309,13 @@ function MemoryBattleGame({
         }
     }, [flipped, cards]);
 
-    // Check finish condition
+    // Submit all attempts when board is fully matched
     useEffect(() => {
-        if (matched.length === cards.length && cards.length > 0) {
-             const timeMs = Date.now() - startTime;
-             // Submit result
-             onFinish([{ questionId: 0, answer: 1, correct: true, timeMs }]); // Simplified result for memory
+        if (!submittedRef.current && matched.length === cards.length && cards.length > 0) {
+             submittedRef.current = true;
+             onFinish(attempts);
         }
-    }, [matched, cards.length, startTime, onFinish]);
+    }, [attempts, matched.length, cards.length, onFinish]);
 
     const handleCardClick = (index: number) => {
         if (flipped.length >= 2 || flipped.includes(index) || matched.includes(index)) return;
@@ -304,18 +345,18 @@ function MemoryBattleGame({
 // Riddle Game Component
 function RiddleGame({
   questions,
-  settings,
-  userId,
   onFinish,
 }: {
-  questions: any[];
-  settings: GameSettings;
-  userId: string;
-  onFinish: (answers: any[]) => void;
+  questions: RiddleQuestion[];
+  onFinish: (answers: GameAnswer[]) => void;
 }) {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [answers, setAnswers] = useState<any[]>([]);
-    const [startTime] = useState(Date.now());
+    const [answers, setAnswers] = useState<GameAnswer[]>([]);
+    const questionStartTimeRef = useRef(0);
+
+    useEffect(() => {
+        questionStartTimeRef.current = performance.now();
+    }, [currentIndex, questions]);
 
     // If questions are not loaded yet or invalid format
     if (!questions || !questions.length) return <div>Loading riddles...</div>;
@@ -325,8 +366,8 @@ function RiddleGame({
     // Check if options exist
     const options = currentRiddle.options || [];
 
-    const handleAnswer = (optionIndex: number) => {
-        const timeMs = Date.now() - startTime; // simplified time tracking relative to start, ideally per question
+    const handleAnswer = (optionIndex: number, eventTime: number) => {
+        const timeMs = Math.max(0, Math.round(eventTime - questionStartTimeRef.current));
         const correct = optionIndex === currentRiddle.answer;
 
         const newAnswer = {
@@ -358,7 +399,7 @@ function RiddleGame({
                             key={idx}
                             variant="outline"
                             className="h-auto py-4 text-left justify-start whitespace-normal"
-                            onClick={() => handleAnswer(idx)}
+                            onClick={(event) => handleAnswer(idx, event.timeStamp)}
                          >
                             {option}
                          </Button>
@@ -381,11 +422,12 @@ function GameResultScreen({
   onPlayAgain: () => void;
   onLeave: () => void;
 }) {
-  const myResult = result.playerResults.find(p => p.id === userId);
-  const opponentResult = result.playerResults.find(p => p.id !== userId);
+  const normalizedUserId = normalizeId(userId);
+  const myResult = result.playerResults.find(p => normalizeId(p.id) === normalizedUserId);
+  const opponentResult = result.playerResults.find(p => normalizeId(p.id) !== normalizedUserId);
 
   // Winner is determined by server (considers time tiebreaker)
-  const isWinner = result.winner?.id === userId;
+  const isWinner = normalizeId(result.winner?.id) === normalizedUserId;
   const isDraw = result.winner === null;
   const isTiedScore = myResult?.score === opponentResult?.score;
 
@@ -461,9 +503,10 @@ function GameResultScreen({
 }
 
 // Waiting Screen while opponent finishes
-function WaitingForOpponent({ room, userId }: { room: any; userId: string }) {
-  const opponent = room.players.find((p: any) => p.id !== userId);
-  const meFinished = room.players.find((p: any) => p.id === userId)?.finished;
+function WaitingForOpponent({ room, userId }: { room: GameRoom; userId: string }) {
+  const normalizedUserId = normalizeId(userId);
+  const opponent = room.players.find((p: RoomPlayer) => normalizeId(p.id) !== normalizedUserId);
+  const meFinished = room.players.find((p: RoomPlayer) => normalizeId(p.id) === normalizedUserId)?.finished;
 
   return (
     <div className="text-center space-y-6 py-8">
@@ -504,18 +547,9 @@ export default function MultiplayerPage() {
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [localSettings, setLocalSettings] = useState<GameSettings>({ questionCount: 5, timePerQuestion: 15 });
   const [hasFinished, setHasFinished] = useState(false);
-
-  useEffect(() => {
-    if (currentRoom?.settings) {
-      setLocalSettings(currentRoom.settings as GameSettings);
-    }
-  }, [currentRoom?.settings]);
-
-  useEffect(() => {
-    if (gameResult) {
-      setHasFinished(false);
-    }
-  }, [gameResult]);
+  const userIdentity = user as ({ id?: string; _id?: string } | null);
+  const userId = normalizeId(userIdentity?.id ?? userIdentity?._id);
+  const roomSettings = currentRoom?.settings as GameSettings | undefined;
 
   const copyInviteCode = () => {
     if (inviteCode) {
@@ -533,7 +567,7 @@ export default function MultiplayerPage() {
   };
 
   const handleSettingsChange = (newSettings: Partial<GameSettings>) => {
-    const updated = { ...localSettings, ...newSettings };
+    const updated = { ...(roomSettings ?? localSettings), ...newSettings };
     setLocalSettings(updated);
     if (currentRoom && inviteCode) {
       updateSettings(currentRoom.id, newSettings);
@@ -543,6 +577,7 @@ export default function MultiplayerPage() {
   const handleCreatePrivateRoom = (gameType: GameType) => {
     createPrivateRoom(gameType, localSettings);
     setSelectedGame(gameType);
+    setHasFinished(false);
   };
 
   const handleFinishGame = (answers: { questionId: number; answer: number; correct: boolean; timeMs: number }[]) => {
@@ -557,6 +592,7 @@ export default function MultiplayerPage() {
       leaveRoom(currentRoom.id);
     }
     setSelectedGame(null);
+    setHasFinished(false);
   };
 
   const handleLeave = () => {
@@ -597,7 +633,7 @@ export default function MultiplayerPage() {
             <CardContent>
               <GameResultScreen
                 result={gameResult}
-                userId={user.id}
+                userId={userId}
                 onPlayAgain={handlePlayAgain}
                 onLeave={handleLeave}
               />
@@ -623,7 +659,7 @@ export default function MultiplayerPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <WaitingForOpponent room={currentRoom} userId={user.id} />
+                <WaitingForOpponent room={currentRoom} userId={userId} />
               </CardContent>
             </Card>
           </div>
@@ -646,21 +682,16 @@ export default function MultiplayerPage() {
                   <SpeedMathGame
                     questions={gameQuestions}
                     settings={gameSettings}
-                    userId={user.id}
                     onFinish={handleFinishGame}
                   />
               ) : currentRoom.gameType === GameType.RIDDLE_ARENA ? (
                   <RiddleGame
-                    questions={gameQuestions}
-                    settings={gameSettings}
-                    userId={user.id}
+                    questions={gameQuestions as unknown as RiddleQuestion[]}
                     onFinish={handleFinishGame}
                   />
               ) : currentRoom.gameType === GameType.MEMORY_MATCH_BATTLE ? (
                    <MemoryBattleGame
-                    questions={gameQuestions}
-                    settings={gameSettings}
-                    userId={user.id}
+                    questions={gameQuestions as unknown as MemoryCard[]}
                     onFinish={handleFinishGame}
                   />
               ) : (
@@ -708,7 +739,7 @@ export default function MultiplayerPage() {
                   {/* Game Settings - Only for private rooms and only host can change */}
                   {isHost && currentRoom.status === 'waiting' && (
                     <GameSettingsPanel
-                      settings={localSettings}
+                      settings={roomSettings ?? localSettings}
                       onSettingsChange={handleSettingsChange}
                       disabled={currentRoom.players.length >= 2}
                     />
@@ -717,8 +748,8 @@ export default function MultiplayerPage() {
                   {/* Player list */}
                   <div className="space-y-3">
                     <p className="text-sm font-medium text-muted-foreground">Players:</p>
-                    {currentRoom.players.map((player: any, index: number) => {
-                      const isMe = player.id === user?.id;
+                    {currentRoom.players.map((player: RoomPlayer, index: number) => {
+                      const isMe = normalizeId(player.id) === userId;
                       return (
                         <div
                           key={player.id || player.socketId || `player-${index}`}
@@ -781,14 +812,14 @@ export default function MultiplayerPage() {
                     <Button
                       className="w-full h-12 text-lg font-semibold"
                       onClick={() => setReady(currentRoom.id)}
-                      disabled={currentRoom.players.find((p: any) => p.id === user?.id)?.ready}
+                      disabled={currentRoom.players.find((p: RoomPlayer) => normalizeId(p.id) === userId)?.ready}
                     >
-                      {currentRoom.players.every((p: any) => p.ready) ? (
+                      {currentRoom.players.every((p: RoomPlayer) => p.ready) ? (
                         <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Starting Game...</>
-                      ) : currentRoom.players.find((p: any) => p.id === user?.id)?.ready ? (
+                      ) : currentRoom.players.find((p: RoomPlayer) => normalizeId(p.id) === userId)?.ready ? (
                         '✓ Ready - Waiting for opponent'
                       ) : (
-                        <>🎮 I'm Ready!</>
+                        <>🎮 I&apos;m Ready!</>
                       )}
                     </Button>
                   )}
