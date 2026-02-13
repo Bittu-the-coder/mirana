@@ -162,6 +162,8 @@ function SpeedMathGame({
   const [timeLeft, setTimeLeft] = useState(settings.timePerQuestion);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const questionStartTimeRef = useRef<number>(performance.now());
+  const questionDeadlineRef = useRef<number>(performance.now() + settings.timePerQuestion * 1000);
 
   const currentQuestion = questions[currentIndex];
 
@@ -170,8 +172,19 @@ function SpeedMathGame({
     return () => clearTimeout(focusTimer);
   }, [currentIndex]);
 
+  useEffect(() => {
+    const now = performance.now();
+    questionStartTimeRef.current = now;
+    questionDeadlineRef.current = now + settings.timePerQuestion * 1000;
+    setTimeLeft(settings.timePerQuestion);
+  }, [currentIndex, settings.timePerQuestion]);
+
   const handleSubmit = useCallback((timeout = false) => {
-    const timeMs = Math.max(0, Math.round((settings.timePerQuestion - timeLeft) * 1000));
+    const elapsedMs = performance.now() - questionStartTimeRef.current;
+    const timeMs = Math.min(
+      settings.timePerQuestion * 1000,
+      Math.max(0, Math.round(elapsedMs)),
+    );
     const answerNum = timeout ? -1 : parseInt(userAnswer, 10);
     const correct = !timeout && answerNum === currentQuestion.answer;
 
@@ -191,32 +204,28 @@ function SpeedMathGame({
       if (currentIndex + 1 >= questions.length) {
         onFinish(updatedAnswers);
       } else {
-        setCurrentIndex(i => i + 1);
-        setTimeLeft(settings.timePerQuestion);
+        setCurrentIndex((index) => index + 1);
         setUserAnswer('');
         setFeedback(null);
       }
     }, 800);
-  }, [answers, currentIndex, currentQuestion.answer, currentQuestion.id, onFinish, questions.length, settings.timePerQuestion, timeLeft, userAnswer]);
+  }, [answers, currentIndex, currentQuestion.answer, currentQuestion.id, onFinish, questions.length, settings.timePerQuestion, userAnswer]);
 
   useEffect(() => {
-    if (feedback !== null) {
-      return;
-    }
+    if (feedback !== null) return;
 
     const timer = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          clearInterval(timer);
-          handleSubmit(true);
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-
+      const remainingMs = questionDeadlineRef.current - performance.now();
+      if (remainingMs <= 0) {
+        setTimeLeft(0);
+        clearInterval(timer);
+        handleSubmit(true);
+        return;
+      }
+      setTimeLeft(Math.ceil(remainingMs / 1000));
+    }, 120);
     return () => clearInterval(timer);
-  }, [currentIndex, feedback, handleSubmit]);
+  }, [feedback, handleSubmit]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,12 +242,12 @@ function SpeedMathGame({
       <Progress value={(timeLeft / settings.timePerQuestion) * 100} className="h-2" />
 
       <div className={cn(
-        "text-center p-8 rounded-xl transition-colors",
+        "text-center p-6 sm:p-8 rounded-xl transition-colors",
         feedback === 'correct' ? 'bg-green-500/20' :
         feedback === 'wrong' ? 'bg-red-500/20' :
         'bg-primary/10'
       )}>
-        <p className="text-4xl font-bold">
+        <p className="text-3xl sm:text-4xl font-bold">
           {currentQuestion.a} {currentQuestion.op} {currentQuestion.b} = ?
         </p>
       </div>
@@ -278,7 +287,7 @@ function MemoryBattleGame({
     const lastAttemptStartedAt = useRef<number>(0);
 
     useEffect(() => {
-        lastAttemptStartedAt.current = Date.now();
+        lastAttemptStartedAt.current = performance.now();
     }, []);
 
     // Effect to check matches
@@ -286,7 +295,7 @@ function MemoryBattleGame({
         if (flipped.length === 2) {
             const [first, second] = flipped;
             const isCorrect = cards[first].icon === cards[second].icon;
-            const now = Date.now();
+            const now = performance.now();
 
             setAttempts(prev => [
               ...prev,
@@ -294,7 +303,7 @@ function MemoryBattleGame({
                 questionId: prev.length,
                 answer: isCorrect ? 1 : 0,
                 correct: isCorrect,
-                timeMs: now - lastAttemptStartedAt.current,
+                timeMs: Math.max(0, Math.round(now - lastAttemptStartedAt.current)),
               },
             ]);
             lastAttemptStartedAt.current = now;
@@ -366,8 +375,8 @@ function RiddleGame({
     // Check if options exist
     const options = currentRiddle.options || [];
 
-    const handleAnswer = (optionIndex: number, eventTime: number) => {
-        const timeMs = Math.max(0, Math.round(eventTime - questionStartTimeRef.current));
+    const handleAnswer = (optionIndex: number) => {
+        const timeMs = Math.max(0, Math.round(performance.now() - questionStartTimeRef.current));
         const correct = optionIndex === currentRiddle.answer;
 
         const newAnswer = {
@@ -399,7 +408,7 @@ function RiddleGame({
                             key={idx}
                             variant="outline"
                             className="h-auto py-4 text-left justify-start whitespace-normal"
-                            onClick={(event) => handleAnswer(idx, event.timeStamp)}
+                            onClick={() => handleAnswer(idx)}
                          >
                             {option}
                          </Button>
@@ -423,10 +432,9 @@ function GameResultScreen({
   onLeave: () => void;
 }) {
   const normalizedUserId = normalizeId(userId);
-  const myResult = result.playerResults.find(p => normalizeId(p.id) === normalizedUserId);
-  const opponentResult = result.playerResults.find(p => normalizeId(p.id) !== normalizedUserId);
+  const myResult = result.playerResults.find((player) => normalizeId(player.id) === normalizedUserId);
+  const opponentResult = result.playerResults.find((player) => normalizeId(player.id) !== normalizedUserId);
 
-  // Winner is determined by server (considers time tiebreaker)
   const isWinner = normalizeId(result.winner?.id) === normalizedUserId;
   const isDraw = result.winner === null;
   const isTiedScore = myResult?.score === opponentResult?.score;
@@ -439,54 +447,63 @@ function GameResultScreen({
 
   return (
     <div className="text-center space-y-6">
-      <div className={cn(
-        "py-6 rounded-xl",
-        isWinner ? "bg-gradient-to-r from-amber-500/20 to-yellow-500/20" :
-        isDraw ? "bg-blue-500/20" :
-        "bg-muted"
-      )}>
-        <Trophy className={cn(
-          "h-16 w-16 mx-auto mb-3",
-          isWinner ? "text-amber-500" : isDraw ? "text-blue-500" : "text-gray-400"
-        )} />
+      <div
+        className={cn(
+          'py-6 rounded-xl',
+          isWinner
+            ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20'
+            : isDraw
+              ? 'bg-blue-500/20'
+              : 'bg-muted',
+        )}
+      >
+        <Trophy
+          className={cn(
+            'h-16 w-16 mx-auto mb-3',
+            isWinner ? 'text-amber-500' : isDraw ? 'text-blue-500' : 'text-gray-400',
+          )}
+        />
         <h2 className="text-2xl font-bold">
-          {isDraw ? "It's a Draw!" : isWinner ? '🎉 You Win!' : 'Game Over'}
+          {isDraw ? "It's a Draw!" : isWinner ? 'You Win!' : 'You Lose'}
         </h2>
         {isTiedScore && !isDraw && (
           <p className="text-sm text-muted-foreground mt-1">
-            {isWinner ? "You were faster!" : "Opponent was faster!"}
+            {isWinner ? 'You were faster!' : 'Opponent was faster!'}
           </p>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className={cn(
-          "p-4 rounded-lg",
-          isWinner ? "bg-green-500/20 border-2 border-green-500" :
-          isDraw ? "bg-blue-500/10 border-2 border-blue-500" : "bg-muted"
-        )}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div
+          className={cn(
+            'p-4 rounded-lg',
+            isWinner
+              ? 'bg-green-500/20 border-2 border-green-500'
+              : isDraw
+                ? 'bg-blue-500/10 border-2 border-blue-500'
+                : 'bg-muted',
+          )}
+        >
           <p className="text-sm text-muted-foreground mb-1">You</p>
           <p className="text-3xl font-bold">{myResult?.score || 0}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {myResult?.correctAnswers || 0} correct
-          </p>
-          <p className="text-xs text-muted-foreground">
-            ⏱ {formatTime(myResult?.totalTime || 0)}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">{myResult?.correctAnswers || 0} correct</p>
+          <p className="text-xs text-muted-foreground">Time: {formatTime(myResult?.totalTime || 0)}</p>
         </div>
-        <div className={cn(
-          "p-4 rounded-lg",
-          !isWinner && !isDraw ? "bg-amber-500/20 border-2 border-amber-500" :
-          isDraw ? "bg-blue-500/10 border-2 border-blue-500" : "bg-muted"
-        )}>
+
+        <div
+          className={cn(
+            'p-4 rounded-lg',
+            !isWinner && !isDraw
+              ? 'bg-amber-500/20 border-2 border-amber-500'
+              : isDraw
+                ? 'bg-blue-500/10 border-2 border-blue-500'
+                : 'bg-muted',
+          )}
+        >
           <p className="text-sm text-muted-foreground mb-1">{opponentResult?.username || 'Opponent'}</p>
           <p className="text-3xl font-bold">{opponentResult?.score || 0}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {opponentResult?.correctAnswers || 0} correct
-          </p>
-          <p className="text-xs text-muted-foreground">
-            ⏱ {formatTime(opponentResult?.totalTime || 0)}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">{opponentResult?.correctAnswers || 0} correct</p>
+          <p className="text-xs text-muted-foreground">Time: {formatTime(opponentResult?.totalTime || 0)}</p>
         </div>
       </div>
 
@@ -501,7 +518,6 @@ function GameResultScreen({
     </div>
   );
 }
-
 // Waiting Screen while opponent finishes
 function WaitingForOpponent({ room, userId }: { room: GameRoom; userId: string }) {
   const normalizedUserId = normalizeId(userId);
@@ -754,32 +770,32 @@ export default function MultiplayerPage() {
                         <div
                           key={player.id || player.socketId || `player-${index}`}
                           className={cn(
-                            "flex items-center justify-between p-4 rounded-lg transition-all",
-                            isMe
-                              ? "bg-primary/20 border-2 border-primary/50"
-                              : "bg-muted",
-                            player.ready && "ring-2 ring-green-500/50"
+                            'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg transition-all',
+                            isMe ? 'bg-primary/20 border-2 border-primary/50' : 'bg-muted',
+                            player.ready && 'ring-2 ring-green-500/50',
                           )}
                         >
-                          <div className="flex items-center gap-3">
-                            <div className={cn(
-                              "h-10 w-10 rounded-full flex items-center justify-center text-lg font-bold",
-                              isMe ? "bg-primary text-primary-foreground" : "bg-secondary"
-                            )}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
+                              className={cn(
+                                'h-10 w-10 rounded-full flex items-center justify-center text-lg font-bold shrink-0',
+                                isMe ? 'bg-primary text-primary-foreground' : 'bg-secondary',
+                              )}
+                            >
                               {player.username?.[0]?.toUpperCase() || '?'}
                             </div>
-                            <div>
+                            <div className="min-w-0">
                               <span className="font-medium flex items-center gap-2">
-                                {player.username}
+                                <span className="truncate">{player.username}</span>
                                 {isMe && <Badge variant="outline" className="text-xs">You</Badge>}
                               </span>
                             </div>
                           </div>
                           <Badge
                             variant={player.ready ? 'default' : 'secondary'}
-                            className={player.ready ? 'bg-green-500' : ''}
+                            className={cn('w-fit', player.ready ? 'bg-green-500' : '')}
                           >
-                            {player.ready ? '✓ Ready' : 'Waiting'}
+                            {player.ready ? 'Ready' : 'Waiting'}
                           </Badge>
                         </div>
                       );
@@ -815,11 +831,13 @@ export default function MultiplayerPage() {
                       disabled={currentRoom.players.find((p: RoomPlayer) => normalizeId(p.id) === userId)?.ready}
                     >
                       {currentRoom.players.every((p: RoomPlayer) => p.ready) ? (
-                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Starting Game...</>
+                        <>
+                          <Loader2 className="h-5 w-5 mr-2 animate-spin" /> Starting Game...
+                        </>
                       ) : currentRoom.players.find((p: RoomPlayer) => normalizeId(p.id) === userId)?.ready ? (
-                        '✓ Ready - Waiting for opponent'
+                        'Ready - Waiting for opponent'
                       ) : (
-                        <>🎮 I&apos;m Ready!</>
+                        <>I&apos;m Ready!</>
                       )}
                     </Button>
                   )}
@@ -964,3 +982,6 @@ export default function MultiplayerPage() {
     </div>
   );
 }
+
+
+

@@ -20,6 +20,10 @@ const COLORS = [
   { name: 'Yellow', bg: 'bg-yellow-400', value: 3 },
   { name: 'Purple', bg: 'bg-purple-500', value: 4 },
   { name: 'Orange', bg: 'bg-orange-500', value: 5 },
+  { name: 'Pink', bg: 'bg-pink-500', value: 6 },
+  { name: 'Cyan', bg: 'bg-cyan-500', value: 7 },
+  { name: 'Lime', bg: 'bg-lime-500', value: 8 },
+  { name: 'Teal', bg: 'bg-teal-500', value: 9 },
 ];
 
 type ColorMemoryConfig = {
@@ -31,42 +35,67 @@ type ColorMemoryConfig = {
 };
 
 const getLevelConfig = (level: number): ColorMemoryConfig => {
-  if (level <= 6) {
+  if (level <= 5) {
     return {
       colorCount: 4,
-      initialSequenceLength: 3 + Math.floor((level - 1) / 2),
+      initialSequenceLength: 3 + Math.floor((level - 1) / 1.5),
       preFlashMs: 380,
       flashMs: 380,
       pauseMs: 220,
     };
   }
 
-  if (level <= 14) {
+  if (level <= 12) {
     return {
       colorCount: 5,
-      initialSequenceLength: 6 + Math.floor((level - 6) * 0.7),
-      preFlashMs: 320,
-      flashMs: 320,
-      pauseMs: 170,
+      initialSequenceLength: 6 + Math.floor((level - 6) * 0.9),
+      preFlashMs: 300,
+      flashMs: 300,
+      pauseMs: 150,
+    };
+  }
+
+  if (level <= 20) {
+    return {
+      colorCount: 7,
+      initialSequenceLength: 12 + Math.floor((level - 13) * 0.9),
+      preFlashMs: 240,
+      flashMs: 230,
+      pauseMs: 120,
+    };
+  }
+
+  if (level <= 30) {
+    return {
+      colorCount: 8,
+      initialSequenceLength: 20 + Math.floor((level - 21) * 0.9),
+      preFlashMs: 200,
+      flashMs: 190,
+      pauseMs: 95,
     };
   }
 
   return {
-    colorCount: 6,
-    initialSequenceLength: 12 + Math.floor((level - 14) * 0.55),
-    preFlashMs: 250,
-    flashMs: 250,
-    pauseMs: 130,
+    colorCount: 9,
+    initialSequenceLength: 29 + Math.floor((level - 31) * 0.8),
+    preFlashMs: 170,
+    flashMs: 160,
+    pauseMs: 85,
   };
 };
 
-const pickNextColor = (colorCount: number, previousColor: number | null): number => {
+const pickNextColor = (sequence: number[], colorCount: number): number => {
   if (colorCount <= 1) return 0;
 
   let nextColor = Math.floor(Math.random() * colorCount);
-  if (previousColor === null) return nextColor;
+  const previousColor = sequence.length > 0 ? sequence[sequence.length - 1] : null;
 
-  while (nextColor === previousColor) {
+  while (
+    nextColor === previousColor ||
+    (sequence.length >= 3 &&
+      nextColor === sequence[sequence.length - 2] &&
+      sequence[sequence.length - 1] === sequence[sequence.length - 3])
+  ) {
     nextColor = Math.floor(Math.random() * colorCount);
   }
 
@@ -78,14 +107,13 @@ const createSequence = (level: number): number[] => {
   const sequence: number[] = [];
 
   for (let i = 0; i < config.initialSequenceLength; i++) {
-    const previous = sequence.length ? sequence[sequence.length - 1] : null;
-    sequence.push(pickNextColor(config.colorCount, previous));
+    sequence.push(pickNextColor(sequence, config.colorCount));
   }
 
   return sequence;
 };
 
-const scoreForLevel = (level: number) => Math.max(0, level * 160);
+const scoreForLevel = (level: number) => Math.max(0, level * 220 + level * level * 2);
 
 export default function ColorMemoryPage() {
   const { user } = useAuth();
@@ -103,6 +131,7 @@ export default function ColorMemoryPage() {
   const storageKey = useMemo(() => `mirana_level_color_memory_${userId}`, [userId]);
   const levelConfig = useMemo(() => getLevelConfig(level), [level]);
   const visibleColors = useMemo(() => COLORS.slice(0, levelConfig.colorCount), [levelConfig.colorCount]);
+  const gridColsClass = levelConfig.colorCount >= 8 ? 'grid-cols-4' : 'grid-cols-3';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -186,8 +215,7 @@ export default function ColorMemoryPage() {
     if (newPlayerSequence.length === sequence.length) {
       const nextLevel = level + 1;
       const nextConfig = getLevelConfig(nextLevel);
-      const previousColor = sequence.length ? sequence[sequence.length - 1] : null;
-      const nextColor = pickNextColor(nextConfig.colorCount, previousColor);
+      const nextColor = pickNextColor(sequence, nextConfig.colorCount);
       const nextSequence = [...sequence, nextColor];
 
       setScore(scoreForLevel(level));
@@ -223,7 +251,8 @@ export default function ColorMemoryPage() {
                   rules={[
                     "Watch the color sequence.",
                     "Repeat it exactly.",
-                    "Sequence gets longer each round.",
+                    "More colors unlock as levels increase.",
+                    "Sequence gets longer and faster each round.",
                   ]}
                 />
               </div>
@@ -239,12 +268,14 @@ export default function ColorMemoryPage() {
               ) : gameOver ? (
                 <p className="text-lg font-medium text-red-500">Game Over - Level {level}</p>
               ) : (
-                <p className="text-lg font-medium">Press Start to play</p>
+                <p className="text-lg font-medium">
+                  Press Start to play ({levelConfig.colorCount} colors)
+                </p>
               )}
             </div>
 
             {/* Color Grid */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className={cn('grid gap-3', gridColsClass)}>
               {visibleColors.map((color, index) => (
                 <button
                   key={color.name}
