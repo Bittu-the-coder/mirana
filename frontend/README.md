@@ -2,6 +2,26 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Environment Setup
+
+Copy `frontend/.env.example` to `frontend/.env.local` and set real values:
+
+```bash
+cp .env.example .env.local
+```
+
+Required variables:
+
+- `NEXT_PUBLIC_API_URL`
+- `NEXT_PUBLIC_WS_URL`
+- `NEXT_PUBLIC_INTERNAL_API_KEY`
+
+Optional timeout tuning:
+
+- `NEXT_PUBLIC_API_TIMEOUT_MS` (default: `30000`)
+- `NEXT_PUBLIC_UPLOAD_TIMEOUT_MS` (default: `60000`)
+- `NEXT_PUBLIC_API_RETRIES` (default: `2`, idempotent requests only)
+
 First, run the development server:
 
 ```bash

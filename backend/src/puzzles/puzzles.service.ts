@@ -19,6 +19,7 @@ export class PuzzlesService {
     content: string;
     solution: string;
     hints?: string[];
+    imageUrl?: string;
   }): Promise<PuzzleDocument> {
     const puzzle = new this.puzzleModel({
       author: new Types.ObjectId(userId),

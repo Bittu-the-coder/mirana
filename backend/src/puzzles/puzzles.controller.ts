@@ -19,6 +19,7 @@ export class PuzzlesController {
       content: string;
       solution: string;
       hints?: string[];
+      imageUrl?: string;
     }
   ) {
     return this.puzzlesService.create(req.user.userId, data);

@@ -38,6 +38,8 @@ export enum GameType {
   MEMORY_MATCH_BATTLE = 'memory_match_battle',
   WORD_CHAIN = 'word_chain',
   WORD_CONNECT = 'word_connect',
+  CHESS = 'chess',
+  LUDO = 'ludo',
   MENTAL_MATH = 'mental_math',
 }
 

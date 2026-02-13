@@ -13,9 +13,54 @@ import { GameType } from '../games/schemas/game-score.schema';
 import { UsersService } from '../users/users.service';
 import { MultiplayerService } from './multiplayer.service';
 
+const isPrivateOrLocalOrigin = (origin: string): boolean => {
+  try {
+    const { hostname } = new URL(origin);
+
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+      return true;
+    }
+
+    if (hostname.startsWith('10.') || hostname.startsWith('192.168.')) {
+      return true;
+    }
+
+    const match = hostname.match(/^172\.(\d{1,2})\./);
+    if (match) {
+      const secondOctet = Number.parseInt(match[1], 10);
+      return secondOctet >= 16 && secondOctet <= 31;
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+};
+
+const envOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  ...envOrigins,
+  'http://localhost:3000',
+  'https://mirana-games.vercel.app',
+  'https://mirana.bittuthecoder.me',
+];
+
+const allowPrivateNetworkOrigins = process.env.NODE_ENV !== 'production';
+
 @WebSocketGateway({
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || (allowPrivateNetworkOrigins && isPrivateOrLocalOrigin(origin))) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`WebSocket CORS blocked for origin: ${origin}`), false);
+    },
     credentials: true,
   },
 })

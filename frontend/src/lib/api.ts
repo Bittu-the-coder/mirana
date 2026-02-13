@@ -1,7 +1,5 @@
 import { AuthResponse, Comment, Difficulty, GameScore, GameType, Puzzle, PuzzleCategory, User } from './types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
 // Custom error classes for better error handling
 export class ApiError extends Error {
   constructor(
@@ -50,11 +48,27 @@ function getReadableError(error: string): string {
   return ERROR_MESSAGES[error] || error;
 }
 
+function parsePositiveIntEnv(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return parsed;
+}
+
 class ApiClient {
   private token: string | null = null;
   private isOnline: boolean = true;
+  private readonly apiBaseUrl: string;
+  private readonly requestTimeoutMs: number;
+  private readonly uploadTimeoutMs: number;
+  private readonly maxRetries: number;
 
   constructor() {
+    this.apiBaseUrl = this.resolveApiBaseUrl();
+    this.requestTimeoutMs = parsePositiveIntEnv(process.env.NEXT_PUBLIC_API_TIMEOUT_MS, 30000);
+    this.uploadTimeoutMs = parsePositiveIntEnv(process.env.NEXT_PUBLIC_UPLOAD_TIMEOUT_MS, 60000);
+    this.maxRetries = parsePositiveIntEnv(process.env.NEXT_PUBLIC_API_RETRIES, 2);
+
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('token');
 
@@ -63,6 +77,44 @@ class ApiClient {
       window.addEventListener('offline', () => { this.isOnline = false; });
       this.isOnline = navigator.onLine;
     }
+  }
+
+  private resolveApiBaseUrl(): string {
+    const configuredUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+    if (configuredUrl) {
+      return configuredUrl.replace(/\/$/, '');
+    }
+
+    if (typeof window !== 'undefined') {
+      const isLocalhost =
+        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocalhost) {
+        return 'http://localhost:3001';
+      }
+
+      // Production fallback when env is not injected.
+      return window.location.origin.replace(/\/$/, '');
+    }
+
+    return 'http://localhost:3001';
+  }
+
+  private getInternalApiKey(): string {
+    const apiKey = process.env.NEXT_PUBLIC_INTERNAL_API_KEY?.trim() || '';
+
+    if (!apiKey && typeof window !== 'undefined') {
+      const isLocalhost =
+        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (!isLocalhost) {
+        throw new ApiError(
+          'Missing NEXT_PUBLIC_INTERNAL_API_KEY in frontend production environment.',
+          500,
+          'ENV_MISSING',
+        );
+      }
+    }
+
+    return apiKey;
   }
 
   setToken(token: string | null) {
@@ -79,7 +131,7 @@ class ApiClient {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    retries: number = 2
+    retries?: number
   ): Promise<T> {
     // Check if offline
     if (typeof window !== 'undefined' && !navigator.onLine) {
@@ -88,7 +140,7 @@ class ApiClient {
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'x-api-key': process.env.NEXT_PUBLIC_INTERNAL_API_KEY || '',
+      'x-api-key': this.getInternalApiKey(),
       ...options.headers,
     };
 
@@ -96,11 +148,17 @@ class ApiClient {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
     }
 
+    const method = (options.method || 'GET').toUpperCase();
+    const isIdempotentMethod = ['GET', 'HEAD', 'OPTIONS'].includes(method);
+    const retriesLeft = typeof retries === 'number'
+      ? retries
+      : (isIdempotentMethod ? this.maxRetries : 0);
+
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeoutMs);
 
-      const response = await fetch(`${API_URL}${endpoint}`, {
+      const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
         ...options,
         headers,
         signal: controller.signal,
@@ -146,14 +204,18 @@ class ApiClient {
     } catch (error) {
       // Handle abort/timeout
       if (error instanceof Error && error.name === 'AbortError') {
+        if (retriesLeft > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          return this.request<T>(endpoint, options, retriesLeft - 1);
+        }
         throw new NetworkError('Request timed out. Please try again.');
       }
 
       // Handle network errors with retry
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        if (retries > 0) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return this.request<T>(endpoint, options, retries - 1);
+        if (retriesLeft > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          return this.request<T>(endpoint, options, retriesLeft - 1);
         }
         throw new NetworkError();
       }
@@ -308,6 +370,7 @@ class ApiClient {
     content: string;
     solution: string;
     hints?: string[];
+    imageUrl?: string;
   }): Promise<Puzzle> {
     if (!data.title || data.title.length < 3) {
       throw new ValidationError('Puzzle title must be at least 3 characters.');
@@ -323,6 +386,64 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  }
+
+  async uploadImage(file: File, fileName?: string): Promise<{ url: string; fileId?: string }> {
+    if (!file) {
+      throw new ValidationError('Image file is required.');
+    }
+    if (!this.token) {
+      throw new AuthenticationError('Please login to upload an image.');
+    }
+
+    const uploadData = new FormData();
+    uploadData.append('file', file);
+    uploadData.append('fileName', fileName || `upload_${Date.now()}`);
+
+    const headers: HeadersInit = {
+      'x-api-key': this.getInternalApiKey(),
+      Authorization: `Bearer ${this.token}`,
+    };
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.uploadTimeoutMs);
+
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/upload`, {
+        method: 'POST',
+        headers,
+        body: uploadData,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Upload failed' }));
+        const errorMessage = getReadableError(errorData.message || 'Upload failed');
+
+        if (response.status === 401) {
+          throw new AuthenticationError(errorMessage);
+        }
+
+        throw new ApiError(errorMessage, response.status);
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new NetworkError('Upload timed out. Please try again.');
+      }
+
+      if (error instanceof ApiError || error instanceof NetworkError) {
+        throw error;
+      }
+
+      throw new ApiError(
+        error instanceof Error ? error.message : 'Failed to upload image',
+        500,
+      );
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   async solvePuzzle(id: string, solution: string): Promise<{ correct: boolean }> {

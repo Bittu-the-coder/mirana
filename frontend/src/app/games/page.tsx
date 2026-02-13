@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth-context';
 import {
+    Castle,
+    Dice6,
     Eye,
     Grid3X3,
     Hash,
@@ -19,6 +21,26 @@ import {
 import Link from 'next/link';
 
 const games = [
+  {
+    id: 'chess',
+    name: 'Chess Tactics',
+    description: 'Solve tactical chess puzzles under pressure',
+    icon: Castle,
+    difficulty: 'Hard',
+    category: 'Strategy',
+    color: 'text-slate-300',
+    isNew: true,
+  },
+  {
+    id: 'ludo',
+    name: 'Ludo Race',
+    description: 'Race your token against an AI rival with dice strategy',
+    icon: Dice6,
+    difficulty: 'Medium',
+    category: 'Strategy',
+    color: 'text-emerald-400',
+    isNew: true,
+  },
   {
     id: 'sliding-puzzle',
     name: 'Sliding Puzzle',
@@ -129,7 +151,7 @@ export default function GamesPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Solo Games</h1>
           <p className="text-muted-foreground">
-            Train your brain with 9 unique puzzle games. Track your progress and compete for high scores.
+            Train your brain with strategy, logic, word, and memory challenges. Track your progress and compete for high scores.
           </p>
         </div>
 

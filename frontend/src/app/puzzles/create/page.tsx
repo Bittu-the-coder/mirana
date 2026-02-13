@@ -49,29 +49,11 @@ export default function CreatePuzzlePage() {
 
     setUploading(true);
     try {
-      // Create form data for upload
-      const uploadData = new FormData();
-      uploadData.append('file', file);
-      uploadData.append('fileName', `puzzle_${Date.now()}_${file.name}`);
-
-      // Upload to ImageKit via your backend
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: uploadData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const data = await response.json();
-      setFormData({ ...formData, imageUrl: data.url });
+      const data = await api.uploadImage(file, `puzzle_${Date.now()}_${file.name}`);
+      setFormData((prev) => ({ ...prev, imageUrl: data.url }));
       toast.success('Image uploaded!');
     } catch (error) {
-      toast.error('Failed to upload image. Make sure ImageKit is configured in .env');
+      toast.error(error instanceof Error ? error.message : 'Failed to upload image');
     } finally {
       setUploading(false);
     }

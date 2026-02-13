@@ -12,6 +12,13 @@ import { PuzzlesModule } from './puzzles/puzzles.module';
 import { UploadModule } from './upload/upload.module';
 import { UsersModule } from './users/users.module';
 
+const parsePositiveInt = (value: string | undefined, fallback: number): number => {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return parsed;
+};
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,24 +33,29 @@ import { UsersModule } from './users/users.module';
 
         if (!uri) {
           if (nodeEnv === 'production') {
-            logger.error('❌ CRITICAL: MONGODB_URI is missing in production environment!');
+            logger.error('MONGODB_URI is missing in production environment.');
             throw new Error('MONGODB_URI is required in production');
           }
-          logger.warn('⚠️ MONGODB_URI is missing, falling back to localhost for development.');
+          logger.warn('MONGODB_URI is missing, using localhost for development.');
         } else {
-          logger.log('🔌 Attempting to connect to MongoDB...');
+          logger.log('Attempting to connect to MongoDB...');
         }
+
+        const mongoConnectTimeoutMs = parsePositiveInt(config.get<string>('MONGO_CONNECT_TIMEOUT_MS'), 20000);
+        const mongoSocketTimeoutMs = parsePositiveInt(config.get<string>('MONGO_SOCKET_TIMEOUT_MS'), 60000);
+        const mongoSelectionTimeoutMs = parsePositiveInt(config.get<string>('MONGO_SERVER_SELECTION_TIMEOUT_MS'), 20000);
 
         return {
           uri: uri || 'mongodb://localhost:27017/mirana',
-          connectionFactory: (connection) => {
-            connection.on('connected', () => logger.log('✅ MongoDB connected successfully'));
-            connection.on('error', (err) => logger.error('❌ MongoDB connection error:', err));
+          connectionFactory: (connection: any) => {
+            connection.on('connected', () => logger.log('MongoDB connected successfully'));
+            connection.on('error', (err: unknown) => logger.error('MongoDB connection error:', err));
             return connection;
           },
-          connectTimeoutMS: 10000, // 10 seconds timeout
-          socketTimeoutMS: 45000,
-          serverSelectionTimeoutMS: 10000,
+          connectTimeoutMS: mongoConnectTimeoutMs,
+          socketTimeoutMS: mongoSocketTimeoutMs,
+          serverSelectionTimeoutMS: mongoSelectionTimeoutMs,
+          maxPoolSize: parsePositiveInt(config.get<string>('MONGO_MAX_POOL_SIZE'), 20),
         };
       },
     }),

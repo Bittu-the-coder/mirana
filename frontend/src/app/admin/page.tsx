@@ -65,6 +65,8 @@ export default function AdminPage() {
     [GameType.SPEED_MATH_DUEL]: 'Speed Math Duel',
     [GameType.MEMORY_MATCH_BATTLE]: 'Memory Match Battle',
     [GameType.SLIDING_PUZZLE]: 'Sliding Puzzle',
+    [GameType.CHESS]: 'Chess',
+    [GameType.LUDO]: 'Ludo',
   };
 
   if (loading) {

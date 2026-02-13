@@ -52,6 +52,8 @@ const gameTypes = [
   { value: GameType.COLOR_MEMORY, label: 'Color Memory' },
   { value: GameType.NUMBER_PYRAMID, label: 'Number Pyramid' },
   { value: GameType.SLIDING_PUZZLE, label: 'Sliding Puzzle' },
+  { value: GameType.CHESS, label: 'Chess' },
+  { value: GameType.LUDO, label: 'Ludo' },
 ];
 
 const difficulties = ['easy', 'medium', 'hard', 'expert'];
