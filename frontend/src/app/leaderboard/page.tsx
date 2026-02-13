@@ -160,11 +160,11 @@ export default function LeaderboardPage() {
                       <p className="font-medium truncate">{user.username}</p>
                       <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                         <span>{user.stats?.gamesPlayed || 0} games</span>
-                        <span>•</span>
+                        <span>â€¢</span>
                         <span>{user.stats?.puzzlesSolved || 0} puzzles</span>
                         {activeTab === 'multiplayer' && (
                           <>
-                            <span>•</span>
+                            <span>â€¢</span>
                             <span>{user.stats?.multiplayerWins || 0} wins</span>
                           </>
                         )}
