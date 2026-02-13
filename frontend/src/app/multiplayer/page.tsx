@@ -454,13 +454,13 @@ function GameResultScreen({
             ? 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20'
             : isDraw
               ? 'bg-blue-500/20'
-              : 'bg-muted',
+              : 'bg-red-500/15',
         )}
       >
         <Trophy
           className={cn(
             'h-16 w-16 mx-auto mb-3',
-            isWinner ? 'text-amber-500' : isDraw ? 'text-blue-500' : 'text-gray-400',
+            isWinner ? 'text-amber-500' : isDraw ? 'text-blue-500' : 'text-red-500',
           )}
         />
         <h2 className="text-2xl font-bold">
@@ -481,7 +481,7 @@ function GameResultScreen({
               ? 'bg-green-500/20 border-2 border-green-500'
               : isDraw
                 ? 'bg-blue-500/10 border-2 border-blue-500'
-                : 'bg-muted',
+                : 'bg-red-500/15 border-2 border-red-500',
           )}
         >
           <p className="text-sm text-muted-foreground mb-1">You</p>
@@ -493,11 +493,7 @@ function GameResultScreen({
         <div
           className={cn(
             'p-4 rounded-lg',
-            !isWinner && !isDraw
-              ? 'bg-amber-500/20 border-2 border-amber-500'
-              : isDraw
-                ? 'bg-blue-500/10 border-2 border-blue-500'
-                : 'bg-muted',
+            isDraw ? 'bg-blue-500/10 border-2 border-blue-500' : 'bg-muted',
           )}
         >
           <p className="text-sm text-muted-foreground mb-1">{opponentResult?.username || 'Opponent'}</p>
